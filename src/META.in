@@ -1,0 +1,6 @@
+name="schroedinger"
+version="@VERSION@"
+description="OCaml bindings for schroedinger"
+requires="@requires@"
+archive(byte)="schroedinger.cma"
+archive(native)="schroedinger.cmxa"
