@@ -30,6 +30,79 @@ type format =
    | Yuv_420_p   (** Planar YCbCr 4:2:0. Each component is an uint8_t,
                    * luma and chroma values are full range (0x00 .. 0xff) *)
 
+type video_type = 
+  | CUSTOM
+  | QSIF
+  | QCIF
+  | SIF
+  | CIF
+  | SIF_4
+  | CIF_4
+  | SD480I_60
+  | SD576I_50
+  | HD720P_60
+  | HD720P_50
+  | HD1080I_60
+  | HD1080I_50
+  | HD1080P_60
+  | HD1080P_50
+  | DC2K_24
+  | DC4K_24
+
+type chroma = 
+  | Chroma_422
+  | Chroma_444
+  | Chroma_420
+
+type colour_primaries = 
+  | HDTV
+  | SDTV_525
+  | SDTV_625
+  | CINEMA
+
+type colour_matrix = 
+  | HDTV
+  | SDTV
+  | REVERSIBLE
+
+type transfer_function = 
+  | TV_GAMMA
+  | EXTENDED_GAMMUT
+  | LINEAR
+  | DCI_GAMMA
+
+type video_format = 
+ {
+  video_type : video_type;
+  width : int;
+  height : int;
+  chroma_format : chroma; 
+
+  interlaced : bool;
+  top_field_first : bool;
+
+  frame_rate_numerator : int;
+  frame_rate_denominator : int;
+  aspect_ratio_numerator : int;
+  aspect_ratio_denominator : int;
+
+  clean_width : int;
+  clean_height : int;
+  left_offset : int;
+  top_offset : int;
+
+  luma_offset : int;
+  luma_excursion : int;
+  chroma_offset : int;
+  chroma_excursion : int;
+
+  colour_primaries: colour_primaries;
+  colour_matrix : colour_matrix;
+  transfer_function : transfer_function;
+
+  interlaced_coding : bool;
+ }
+
 type frame =
   {
     (** The integer is the stride for the plane. *)

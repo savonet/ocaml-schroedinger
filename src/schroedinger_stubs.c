@@ -149,6 +149,68 @@ CAMLprim value caml_schroedinger_int_of_define(value v)
     CAMLreturn(Val_int(SCHRO_FRAME_FORMAT_U8_422)) ;
   if (!strcmp(s,"SCHRO_FRAME_FORMAT_U8_420"))
     CAMLreturn(Val_int(SCHRO_FRAME_FORMAT_U8_420)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_CUSTOM"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_CUSTOM)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_QSIF"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_QSIF)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_QCIF"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_QCIF)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_SIF"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_SIF)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_CIF"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_CIF)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_4SIF"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_4SIF)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_4CIF"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_4CIF)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_SD480I_60"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_SD480I_60)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_SD576I_50"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_SD576I_50)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_HD720P_60"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_HD720P_60)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_HD720P_50"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_HD720P_50)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_HD1080I_60"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_HD1080I_60)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_HD1080I_50"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_HD1080I_50)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_HD1080P_60"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_HD1080P_60)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_HD1080P_50"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_HD1080P_50)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_DC2K_24"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_DC2K_24)) ;
+  if (!strcmp(s,"SCHRO_VIDEO_FORMAT_DC4K_24"))
+    CAMLreturn(Val_int(SCHRO_VIDEO_FORMAT_DC4K_24)) ;
+  if (!strcmp(s,"SCHRO_CHROMA_444"))
+    CAMLreturn(Val_int(SCHRO_CHROMA_444)) ;
+  if (!strcmp(s,"SCHRO_CHROMA_422"))
+    CAMLreturn(Val_int(SCHRO_CHROMA_422)) ;
+  if (!strcmp(s,"SCHRO_CHROMA_420"))
+    CAMLreturn(Val_int(SCHRO_CHROMA_420)) ;
+  if (!strcmp(s,"SCHRO_COLOUR_PRIMARY_HDTV"))
+    CAMLreturn(Val_int(SCHRO_COLOUR_PRIMARY_HDTV)) ;
+  if (!strcmp(s,"SCHRO_COLOUR_PRIMARY_SDTV_525"))
+    CAMLreturn(Val_int(SCHRO_COLOUR_PRIMARY_SDTV_525)) ;
+  if (!strcmp(s,"SCHRO_COLOUR_PRIMARY_SDTV_625"))
+    CAMLreturn(Val_int(SCHRO_COLOUR_PRIMARY_SDTV_625)) ;
+  if (!strcmp(s,"SCHRO_COLOUR_PRIMARY_CINEMA"))
+    CAMLreturn(Val_int(SCHRO_COLOUR_PRIMARY_CINEMA)) ;
+  if (!strcmp(s,"SCHRO_COLOUR_MATRIX_HDTV"))
+    CAMLreturn(Val_int(SCHRO_COLOUR_MATRIX_HDTV)) ;
+  if (!strcmp(s,"SCHRO_COLOUR_MATRIX_SDTV"))
+    CAMLreturn(Val_int(SCHRO_COLOUR_MATRIX_SDTV)) ;
+  if (!strcmp(s,"SCHRO_COLOUR_MATRIX_REVERSIBLE"))
+    CAMLreturn(Val_int(SCHRO_COLOUR_MATRIX_REVERSIBLE)) ;
+  if (!strcmp(s,"SCHRO_TRANSFER_CHAR_TV_GAMMA"))
+    CAMLreturn(Val_int(SCHRO_TRANSFER_CHAR_TV_GAMMA)) ;
+  if (!strcmp(s,"SCHRO_TRANSFER_CHAR_EXTENDED_GAMUT"))
+    CAMLreturn(Val_int(SCHRO_TRANSFER_CHAR_EXTENDED_GAMUT)) ;
+  if (!strcmp(s,"SCHRO_TRANSFER_CHAR_LINEAR"))
+    CAMLreturn(Val_int(SCHRO_TRANSFER_CHAR_LINEAR)) ;
+  if (!strcmp(s,"SCHRO_TRANSFER_CHAR_DCI_GAMMA"))
+    CAMLreturn(Val_int(SCHRO_TRANSFER_CHAR_DCI_GAMMA)) ;
 
   caml_failwith("unknown value");
 }
@@ -162,7 +224,6 @@ typedef struct {
   ogg_int64_t decode_frame_number;
   ogg_int64_t presentation_frame_number;
   ogg_int64_t packet_no;
-  int end_of_stream;
 } encoder_t;
 
 #define Schro_enc_val(v) (*((encoder_t**)Data_custom_val(v)))
@@ -219,7 +280,6 @@ CAMLprim value ocaml_schroedinger_create_enc(value unit)
   enc->presentation_frame_number = 0;
   enc->distance_from_sync = 0;
   enc->packet_no = 0;
-  enc->end_of_stream = 0;
   enc->is_sync_point = 1;
  
   SchroEncoder *encoder = schro_encoder_new();
@@ -240,7 +300,6 @@ CAMLprim value ocaml_schroedinger_enc_eos(value enc)
   encoder_t *p = Schro_enc_val(enc);
 
   schro_encoder_end_of_stream(p->encoder);
-  p->end_of_stream = 1;
 
   CAMLreturn(Val_unit);
 }
@@ -255,12 +314,61 @@ CAMLprim value ocaml_schroedinger_enc_encode_frame(value _enc, value frame, valu
   SchroStateEnum state;
   SchroBuffer *enc_buf;
   SchroFrame *f = schro_frame_of_val(frame);
-  
+  int ret = 0; 
+  int pres_frame;
+ 
   /* Put the frame into the encoder. */
   schro_encoder_push_frame(enc->encoder, f);
     
   /* Add a new ogg packet */
+  state = schro_encoder_wait(enc->encoder);
+  switch(state)
+  {
+  case SCHRO_STATE_NEED_FRAME:
+      ret = 0;
+      break;
+  case SCHRO_STATE_END_OF_STREAM:
+      /* TODO: proper exception */
+      caml_failwith("end of stream");
+      break;
+  case SCHRO_STATE_HAVE_BUFFER:
+      enc_buf = schro_encoder_pull(enc->encoder, &pres_frame);
+      if (pres_frame)
+        enc->presentation_frame_number++;
+      op.b_o_s = 0;
+      if (SCHRO_PARSE_CODE_IS_SEQ_HEADER(enc_buf->data[4]))
+      {
+          enc->is_sync_point = 1;
+      }
+      else
+      {
+          enc->is_sync_point = 0;
+      }
+      op.e_o_s = 0;
+      op.bytes = enc_buf->length;
+      op.packet = enc_buf->data;
 
+      if (!SCHRO_PARSE_CODE_IS_END_OF_SEQUENCE(enc_buf->data[4]))
+      {
+          calculate_granulepos(enc, &op);
+      }
+      else
+      {
+          op.e_o_s = 1;
+      }
+      schro_buffer_unref(enc_buf);
+      ret = 1;
+      break;
+  case SCHRO_STATE_AGAIN:
+      ret = 0;
+      break;
+  default:
+      caml_failwith("unknown encoder state");
+  }
+
+  if (ret == 1) 
+    /* Put the packet in the ogg stream. */
+    ogg_stream_packetin(os, &op);
 
   CAMLreturn(Val_unit);
 }
