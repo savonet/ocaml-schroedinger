@@ -103,25 +103,33 @@ type video_format =
   interlaced_coding : bool;
  }
 
+val get_default_video_format : video_type -> video_format
+
 type frame =
   {
     (** The integer is the stride for the plane. *)
     planes : (plane*int) array;
-    width  : int;
-    height : int;
+    frame_width  : int;
+    frame_height : int;
     format : format
   }
+
+val frames_of_granulepos : Int64.t -> Int64.t
 
 module Encoder :
 sig
 
   type t
 
-  val create : unit -> t
+  val create : video_format -> t
+
+  val get_video_format : t -> video_format
+
+  val encode_header : t -> Ogg.Stream.t -> unit
 
   val encode_frame : t -> frame -> Ogg.Stream.t -> unit
 
-  val end_of_stream : t -> unit
+  val eos : t -> Ogg.Stream.t -> unit
 
 end
 

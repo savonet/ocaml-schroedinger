@@ -82,6 +82,28 @@ let int_of_video_type x =
     | DC2K_24 -> f "SCHRO_VIDEO_FORMAT_DC2K_24"
     | DC4K_24 -> f "SCHRO_VIDEO_FORMAT_DC4K_24"
 
+let video_type_of_int x =
+  let f = int_of_define in
+  match x with
+    | x when x = f "SCHRO_VIDEO_FORMAT_CUSTOM" -> CUSTOM
+    | x when x = f "SCHRO_VIDEO_FORMAT_QSIF" -> QSIF
+    | x when x = f "SCHRO_VIDEO_FORMAT_QCIF" -> QCIF
+    | x when x = f "SCHRO_VIDEO_FORMAT_SIF" -> SIF
+    | x when x = f "SCHRO_VIDEO_FORMAT_CIF" -> CIF
+    | x when x = f "SCHRO_VIDEO_FORMAT_4SIF" -> SIF_4
+    | x when x = f "SCHRO_VIDEO_FORMAT_4CIF" -> CIF_4
+    | x when x = f "SCHRO_VIDEO_FORMAT_SD480I_60" -> SD480I_60
+    | x when x = f "SCHRO_VIDEO_FORMAT_SD576I_50" -> SD576I_50
+    | x when x = f "SCHRO_VIDEO_FORMAT_HD720P_60" -> HD720P_60
+    | x when x = f "SCHRO_VIDEO_FORMAT_HD720P_50" -> HD720P_50
+    | x when x = f "SCHRO_VIDEO_FORMAT_HD1080I_60" -> HD1080I_60
+    | x when x = f "SCHRO_VIDEO_FORMAT_HD1080I_50" -> HD1080I_50
+    | x when x = f "SCHRO_VIDEO_FORMAT_HD1080P_60" -> HD1080P_60
+    | x when x = f "SCHRO_VIDEO_FORMAT_HD1080P_50" -> HD1080P_50
+    | x when x = f "SCHRO_VIDEO_FORMAT_DC2K_24" -> DC2K_24
+    | x when x = f "SCHRO_VIDEO_FORMAT_DC4K_24" -> DC4K_24
+    | _ -> assert false
+
 type chroma = 
   | Chroma_422
   | Chroma_444
@@ -92,6 +114,13 @@ let int_of_chroma x =
     | Chroma_422 -> int_of_define "SCHRO_CHROMA_422"
     | Chroma_444 -> int_of_define "SCHRO_CHROMA_444"
     | Chroma_420 -> int_of_define "SCHRO_CHROMA_420"
+
+let chroma_of_int x =
+  match x with
+    | x when x = int_of_define "SCHRO_CHROMA_422" -> Chroma_422
+    | x when x = int_of_define "SCHRO_CHROMA_444" -> Chroma_444
+    | x when x = int_of_define "SCHRO_CHROMA_420" -> Chroma_420
+    | _ -> assert false
 
 type colour_primaries = 
   | HDTV
@@ -106,6 +135,14 @@ let int_of_colour_primaries x =
     | SDTV_625 -> int_of_define "SCHRO_COLOUR_PRIMARY_SDTV_625"
     | CINEMA -> int_of_define "SCHRO_COLOUR_PRIMARY_CINEMA"
 
+let colour_primaries_of_int x =
+  match x with
+    | x when x = int_of_define "SCHRO_COLOUR_PRIMARY_HDTV" -> HDTV
+    | x when x = int_of_define "SCHRO_COLOUR_PRIMARY_SDTV_525" -> SDTV_525
+    | x when x = int_of_define "SCHRO_COLOUR_PRIMARY_SDTV_625" -> SDTV_625
+    | x when x = int_of_define "SCHRO_COLOUR_PRIMARY_CINEMA" -> CINEMA
+    | _ -> assert false
+
 type colour_matrix = 
   | HDTV
   | SDTV
@@ -116,6 +153,13 @@ let int_of_colour_matrix x =
     | HDTV -> int_of_define "SCHRO_COLOUR_MATRIX_HDTV"
     | SDTV -> int_of_define "SCHRO_COLOUR_MATRIX_SDTV"
     | REVERSIBLE -> int_of_define "SCHRO_COLOUR_MATRIX_REVERSIBLE"
+
+let colour_matrix_of_int x =
+  match x with
+    | x when x = int_of_define "SCHRO_COLOUR_MATRIX_HDTV" -> HDTV
+    | x when x = int_of_define "SCHRO_COLOUR_MATRIX_SDTV" -> SDTV
+    | x when x = int_of_define "SCHRO_COLOUR_MATRIX_REVERSIBLE" -> REVERSIBLE
+    | _ -> assert false
 
 type transfer_function = 
   | TV_GAMMA
@@ -129,6 +173,14 @@ let int_of_transfer_function x =
     | EXTENDED_GAMMUT -> int_of_define "SCHRO_TRANSFER_CHAR_EXTENDED_GAMMUT"
     | LINEAR -> int_of_define "SCHRO_TRANSFER_CHAR_LINEAR"
     | DCI_GAMMA -> int_of_define "SCHRO_TRANSFER_CHAR_DCI_GAMMA"
+
+let transfer_function_of_int x =
+  match x with
+    | x when x = int_of_define "SCHRO_TRANSFER_CHAR_TV_GAMMA" -> TV_GAMMA
+    | x when x = int_of_define "SCHRO_TRANSFER_CHAR_EXTENDED_GAMMUT" -> EXTENDED_GAMMUT
+    | x when x = int_of_define "SCHRO_TRANSFER_CHAR_LINEAR" -> LINEAR
+    | x when x = int_of_define "SCHRO_TRANSFER_CHAR_DCI_GAMMA" -> DCI_GAMMA
+    | _ -> assert false
 
 type video_format = 
  {
@@ -226,11 +278,49 @@ let internal_video_format_of_video_format x =
   int_interlaced_coding = x.interlaced_coding
  }
 
+let video_format_of_internal_video_format x =
+ {
+  video_type = video_type_of_int x.int_video_type;
+  width = x.int_width;
+  height = x.int_height;
+  chroma_format = chroma_of_int x.int_chroma_format;
+
+  interlaced = x.int_interlaced;
+  top_field_first = x.int_top_field_first;
+
+  frame_rate_numerator = x.int_frame_rate_numerator;
+  frame_rate_denominator = x.int_frame_rate_denominator;
+  aspect_ratio_numerator = x.int_aspect_ratio_numerator;
+  aspect_ratio_denominator = x.int_aspect_ratio_denominator;
+
+  clean_width = x.int_clean_width;
+  clean_height = x.int_clean_height;
+  left_offset = x.int_left_offset;
+  top_offset = x.int_top_offset;
+
+  luma_offset = x.int_luma_offset;
+  luma_excursion = x.int_luma_excursion;
+  chroma_offset = x.int_chroma_offset;
+  chroma_excursion = x.int_chroma_excursion;
+
+  colour_primaries = colour_primaries_of_int x.int_colour_primaries;
+  colour_matrix = colour_matrix_of_int x.int_colour_matrix;
+  transfer_function = transfer_function_of_int x.int_transfer_function;
+
+  interlaced_coding = x.int_interlaced_coding
+ }
+
+external get_default_internal_video_format : int -> internal_video_format = "ocaml_schroedinger_get_default_video_format"
+
+let get_default_video_format x =
+  video_format_of_internal_video_format
+    (get_default_internal_video_format (int_of_video_type x))
+
 type frame = 
   { 
     planes : (plane*int) array;
-    width  : int;
-    height : int;
+    frame_width  : int;
+    frame_height : int;
     format : format
   }
 
@@ -247,20 +337,31 @@ let internal_frame_of_frame f =
     failwith "Frame does not have 3 planes. \
               Only planar formats are supported for now..";
   { int_planes = f.planes;
-    int_width  = f.width;
-    int_height = f.height;
+    int_width  = f.frame_width;
+    int_height = f.frame_height;
     int_format = int_of_format f.format
   }
   
+external frames_of_granulepos : Int64.t -> Int64.t = "ocaml_schroedinger_frames_of_granulepos"
 
 module Encoder = 
 struct
 
   type t
 
-  external create : unit -> t = "ocaml_schroedinger_create_enc"
+  external create : internal_video_format -> t = "ocaml_schroedinger_create_enc"
 
-  external end_of_stream : t -> unit = "ocaml_schroedinger_enc_eos"
+  let create f = 
+    create (internal_video_format_of_video_format f)
+
+  external get_video_format : t -> internal_video_format = "ocaml_schroedinger_enc_video_format"
+
+  let get_video_format x = 
+    video_format_of_internal_video_format (get_video_format x)
+
+  external eos : t -> Ogg.Stream.t -> unit = "ocaml_schroedinger_enc_eos"
+
+  external encode_header : t -> Ogg.Stream.t -> unit = "ocaml_schroedinger_encode_header"
 
   external encode_frame : t -> internal_frame -> Ogg.Stream.t -> unit = "ocaml_schroedinger_encode_frame" 
 

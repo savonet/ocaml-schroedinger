@@ -18,10 +18,13 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/* The code here is inspired/stolen from ffmpeg2dirac */
+
 #include <caml/custom.h>
 #include <caml/fail.h>
 #include <caml/memory.h>
 #include <caml/bigarray.h>
+#include <caml/alloc.h>
 
 #include <ogg/ogg.h>
 #include <ocaml-ogg.h>
@@ -139,7 +142,7 @@ CAMLprim value caml_schroedinger_init(value unit)
   CAMLreturn(Val_unit);
 }
 
-CAMLprim value caml_schroedinger_int_of_define(value v)
+CAMLprim value ocaml_schroedinger_int_of_define(value v)
 {
   CAMLparam1(v);
   char *s = String_val(v);
@@ -215,6 +218,80 @@ CAMLprim value caml_schroedinger_int_of_define(value v)
   caml_failwith("unknown value");
 }
 
+/* Takes internal_video_format */
+static SchroVideoFormat *schro_video_format_of_val(value v, SchroVideoFormat *format)
+{
+  int i = 0;
+  format->index = Int_val(Field(v, i++));
+  format->width = Int_val(Field(v, i++));
+  format->height = Int_val(Field(v, i++));
+  format->chroma_format = Int_val(Field(v, i++));
+  format->interlaced = Bool_val(Field(v, i++));
+  format->top_field_first = Bool_val(Field(v, i++));
+  format->frame_rate_numerator = Int_val(Field(v, i++));
+  format->frame_rate_denominator = Int_val(Field(v, i++));
+  format->aspect_ratio_numerator = Int_val(Field(v, i++));
+  format->aspect_ratio_denominator = Int_val(Field(v, i++));
+  format->clean_width = Int_val(Field(v, i++));
+  format->clean_height = Int_val(Field(v, i++));
+  format->left_offset = Int_val(Field(v, i++));
+  format->top_offset = Int_val(Field(v, i++));
+  format->luma_offset = Int_val(Field(v, i++));
+  format->luma_excursion = Int_val(Field(v, i++));
+  format->chroma_offset = Int_val(Field(v, i++));
+  format->chroma_excursion = Int_val(Field(v, i++));
+  format->colour_primaries = Int_val(Field(v, i++));
+  format->colour_matrix = Int_val(Field(v, i++));
+  format->transfer_function = Int_val(Field(v, i++));
+  format->interlaced_coding = Bool_val(Field(v, i++)); 
+
+  return format;
+}
+
+static value value_of_video_format(SchroVideoFormat *format)
+{
+  CAMLparam0();
+  CAMLlocal1(v);
+  int i = 0;
+  v = caml_alloc_tuple(22);
+  Store_field (v, i++, Val_int(format->index));
+  Store_field (v, i++, Val_int(format->width));
+  Store_field (v, i++, Val_int(format->height));
+  Store_field (v, i++, Val_int(format->chroma_format));
+  Store_field (v, i++, Val_bool(format->interlaced));
+  Store_field (v, i++, Val_bool(format->top_field_first));
+  Store_field (v, i++, Val_int(format->frame_rate_numerator));
+  Store_field (v, i++, Val_int(format->frame_rate_denominator));
+  Store_field (v, i++, Val_int(format->aspect_ratio_numerator));
+  Store_field (v, i++, Val_int(format->aspect_ratio_denominator));
+  Store_field (v, i++, Val_int(format->clean_width));
+  Store_field (v, i++, Val_int(format->clean_height));
+  Store_field (v, i++, Val_int(format->left_offset));
+  Store_field (v, i++, Val_int(format->top_offset));
+  Store_field (v, i++, Val_int(format->luma_offset));
+  Store_field (v, i++, Val_int(format->luma_excursion));
+  Store_field (v, i++, Val_int(format->chroma_offset));
+  Store_field (v, i++, Val_int(format->chroma_excursion));
+  Store_field (v, i++, Val_int(format->colour_primaries));
+  Store_field (v, i++, Val_int(format->colour_matrix));
+  Store_field (v, i++, Val_int(format->transfer_function));
+  Store_field (v, i++, Val_bool(format->interlaced_coding));
+
+  CAMLreturn(v);
+}
+
+CAMLprim value ocaml_schroedinger_get_default_video_format(value index)
+{
+  CAMLparam0();
+  CAMLlocal1(ret);
+  SchroVideoFormat format;
+  
+  schro_video_format_set_std_video_format(&format, Int_val(index));
+  ret = value_of_video_format(&format);
+
+  CAMLreturn(ret);
+}
+
 /* Encoding */
 
 typedef struct {
@@ -245,7 +322,10 @@ static struct custom_operations schro_enc_ops =
   custom_deserialize_default
 };
 
-static void calculate_granulepos (encoder_t *dd, ogg_packet *op)
+/* Granule shift is always 22 for Dirac */
+static const int DIRAC_GRANULE_SHIFT = 22;
+
+static void calculate_granulepos(encoder_t *dd, ogg_packet *op)
 {
     ogg_int64_t granulepos_hi;
     ogg_int64_t granulepos_low;
@@ -263,30 +343,72 @@ static void calculate_granulepos (encoder_t *dd, ogg_packet *op)
     granulepos_hi = ((pt - delay)<<9) | ((dist>>8));
     granulepos_low = (delay << 9) | (dist & 0xff);
 
-    op->granulepos = (granulepos_hi << 22) | (granulepos_low);
+    op->granulepos = (granulepos_hi << DIRAC_GRANULE_SHIFT) | (granulepos_low);
     op->packetno = dd->packet_no++;
     dd->decode_frame_number++;
 }
 
-CAMLprim value ocaml_schroedinger_create_enc(value unit)
+CAMLprim value ocaml_schroedinger_frames_of_granulepos(value _granulepos)
 {
-  CAMLparam0();
-  CAMLlocal1(ret);
+  CAMLparam1(_granulepos);
+  ogg_int64_t granulepos = Int64_val(_granulepos);
+  ogg_int64_t ret;
+  ogg_int64_t granulepos_hi;
+  ogg_int64_t granulepos_low;
+
+  if (granulepos == -1)
+      CAMLreturn(caml_copy_int64(-1));
+
+  granulepos_hi = granulepos >> DIRAC_GRANULE_SHIFT;
+  granulepos_low = granulepos - (granulepos_hi << DIRAC_GRANULE_SHIFT);
+  
+  ret = ((granulepos_hi >> 9) + (granulepos_low >> 9)) >> 1;
+
+  CAMLreturn(caml_copy_int64(ret));
+}
+
+encoder_t *create_enc(SchroVideoFormat *format)
+{
   encoder_t *enc = malloc(sizeof(encoder_t));
   if (enc == NULL)
     caml_failwith("malloc"); 
 
-  enc->decode_frame_number = -1;
+  enc->decode_frame_number = 1;
   enc->presentation_frame_number = 0;
   enc->distance_from_sync = 0;
   enc->packet_no = 0;
   enc->is_sync_point = 1;
  
   SchroEncoder *encoder = schro_encoder_new();
-  if (encoder == NULL)
+  if (encoder == NULL) 
+  {
+    free(enc);
     caml_failwith("schro_encoder_new");
+  }
 
   enc->encoder = encoder;
+
+  if (schro_video_format_validate(format) != 1)
+  {
+    schro_encoder_free(enc->encoder);
+    free(enc);
+    /* TODO: proper exc */
+    caml_failwith("invalid format");
+  }
+
+  schro_encoder_set_video_format(enc->encoder, format);
+  schro_encoder_start(enc->encoder);
+
+  return enc;
+}
+
+CAMLprim value ocaml_schroedinger_create_enc(value f)
+{
+  CAMLparam1(f);
+  CAMLlocal1(ret);
+  SchroVideoFormat format;
+  schro_video_format_of_val(f, &format);
+  encoder_t *enc = create_enc(&format);
 
   ret = caml_alloc_custom(&schro_enc_ops, sizeof(encoder_t*), 1, 0);
   Schro_enc_val(ret) = enc;
@@ -294,48 +416,33 @@ CAMLprim value ocaml_schroedinger_create_enc(value unit)
   CAMLreturn(ret);
 }
 
-CAMLprim value ocaml_schroedinger_enc_eos(value enc)
+CAMLprim value ocaml_schroedinger_enc_video_format(value _enc)
 {
-  CAMLparam1(enc);
-  encoder_t *p = Schro_enc_val(enc);
-
-  schro_encoder_end_of_stream(p->encoder);
-
-  CAMLreturn(Val_unit);
+  CAMLparam1(_enc);
+  encoder_t *enc = Schro_enc_val(_enc);
+  CAMLreturn(value_of_video_format(schro_encoder_get_video_format(enc->encoder)));
 }
 
-CAMLprim value ocaml_schroedinger_enc_encode_frame(value _enc, value frame, value _os)
+/* This function allocates op->packet */
+int enc_get_packet(encoder_t *enc, ogg_packet *op)
 {
-  CAMLparam2(_enc,frame);
-  encoder_t *enc = Schro_enc_val(_enc);
-  ogg_stream_state *os = Stream_state_val(_os);
-  /* You'll go to Hell for using static variables */
-  ogg_packet op;
   SchroStateEnum state;
   SchroBuffer *enc_buf;
-  SchroFrame *f = schro_frame_of_val(frame);
-  int ret = 0; 
   int pres_frame;
  
-  /* Put the frame into the encoder. */
-  schro_encoder_push_frame(enc->encoder, f);
-    
   /* Add a new ogg packet */
   state = schro_encoder_wait(enc->encoder);
   switch(state)
   {
   case SCHRO_STATE_NEED_FRAME:
-      ret = 0;
-      break;
+      return 0;
   case SCHRO_STATE_END_OF_STREAM:
-      /* TODO: proper exception */
-      caml_failwith("end of stream");
-      break;
+      return -1;
   case SCHRO_STATE_HAVE_BUFFER:
       enc_buf = schro_encoder_pull(enc->encoder, &pres_frame);
-      if (pres_frame)
+      //if (pres_frame)
         enc->presentation_frame_number++;
-      op.b_o_s = 0;
+      op->b_o_s = 0;
       if (SCHRO_PARSE_CODE_IS_SEQ_HEADER(enc_buf->data[4]))
       {
           enc->is_sync_point = 1;
@@ -344,32 +451,176 @@ CAMLprim value ocaml_schroedinger_enc_encode_frame(value _enc, value frame, valu
       {
           enc->is_sync_point = 0;
       }
-      op.e_o_s = 0;
-      op.bytes = enc_buf->length;
-      op.packet = enc_buf->data;
+      op->e_o_s = 0;
+      op->packet = malloc(enc_buf->length);
+      if (op->packet == NULL) 
+        caml_failwith("malloc");
+      memcpy(op->packet, enc_buf->data, enc_buf->length);
+      op->bytes = enc_buf->length;
 
       if (!SCHRO_PARSE_CODE_IS_END_OF_SEQUENCE(enc_buf->data[4]))
       {
-          calculate_granulepos(enc, &op);
+          calculate_granulepos(enc, op);
       }
       else
       {
-          op.e_o_s = 1;
+          op->e_o_s = 1;
       }
       schro_buffer_unref(enc_buf);
-      ret = 1;
-      break;
+      return 1;
   case SCHRO_STATE_AGAIN:
-      ret = 0;
-      break;
+      return 2;
   default:
       caml_failwith("unknown encoder state");
   }
+}
 
-  if (ret == 1) 
-    /* Put the packet in the ogg stream. */
-    ogg_stream_packetin(os, &op);
+CAMLprim value ocaml_schroedinger_enc_eos(value _enc, value _os)
+{
+  CAMLparam2(_enc,_os);
+  encoder_t *enc = Schro_enc_val(_enc);
+  ogg_stream_state *os = Stream_state_val(_os);
+  ogg_packet op;  
+  int ret;
+
+  schro_encoder_end_of_stream(enc->encoder);
+  ret = enc_get_packet(enc,&op);
+  while (ret != -1)
+  {
+    if (ret == 1)
+    {
+      /* Put the packet in the ogg stream. */
+      ogg_stream_packetin(os, &op);
+      free(op.packet);
+    }
+    ret = enc_get_packet(enc,&op);
+  }
+
+  /* Add last packet */
+  op.packet = NULL;
+  op.bytes = 0;
+  op.e_o_s = 1;
+  op.b_o_s = 0;
+  ogg_stream_packetin(os, &op);
 
   CAMLreturn(Val_unit);
 }
 
+
+CAMLprim value ocaml_schroedinger_encode_frame(value _enc, value frame, value _os)
+{
+  CAMLparam3(_enc, frame, _os);
+  ogg_stream_state *os = Stream_state_val(_os);
+  encoder_t *enc = Schro_enc_val(_enc);
+  SchroFrame *f = schro_frame_of_val(frame);
+  ogg_packet op;
+  int ret = 2;
+ 
+  /* Put the frame into the encoder. */
+  schro_encoder_push_frame(enc->encoder, f);
+ 
+  while (ret > 0) {
+    ret = enc_get_packet(enc, &op);
+    if (ret == 1)
+    {
+      /* Put the packet in the ogg stream. */
+      ogg_stream_packetin(os, &op);
+      free(op.packet);
+    }
+  }
+
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value ocaml_schroedinger_encode_header(value _enc, value _os)
+{
+  CAMLparam2(_enc, _os);
+  ogg_stream_state *os = Stream_state_val(_os);
+  encoder_t *enc = Schro_enc_val(_enc); 
+  encoder_t *tmp_enc; 
+  ogg_packet op;
+  int format;
+  long header_len;
+  uint8_t *header;
+  SchroFrame *frame;
+
+
+  /* Create a new encoder with the same format */
+  SchroVideoFormat *video_format = schro_encoder_get_video_format(enc->encoder);
+  tmp_enc = create_enc(video_format);
+
+  /* Create dummy frame */
+  switch (video_format->chroma_format)
+  {
+    case SCHRO_CHROMA_444:
+      format = SCHRO_FRAME_FORMAT_U8_444;
+      break;
+    case SCHRO_CHROMA_422:
+      format = SCHRO_FRAME_FORMAT_U8_422;
+      break;
+    case SCHRO_CHROMA_420:
+      format = SCHRO_FRAME_FORMAT_U8_420;
+      break;
+    default:
+      caml_failwith("unknown format");
+  }
+
+  /* Encoder a frame until a packet is ready */
+  do
+  {
+    frame = schro_frame_new_and_alloc(NULL, format, video_format->width, video_format->height);
+    schro_encoder_push_frame(tmp_enc->encoder, frame);
+  }
+  while (enc_get_packet(tmp_enc, &op) != 1);   
+
+  /* Get the encoded buffer */
+  header = op.packet;
+  if (header[0] != 'B' ||
+      header[1] != 'B' ||
+      header[2] != 'C' ||
+      header[3] != 'D' ||
+      header[4] != 0x0)
+  {
+    /* TODO: proper exception */
+    schro_encoder_free(tmp_enc->encoder);
+    free(tmp_enc);
+    free(video_format);
+    caml_failwith("invalid header identifier");
+  }
+  header_len = (header[5] << 24) +
+               (header[6] << 16) +
+               (header[7] << 8) +
+                header[8];
+
+  if (header_len <= 13)
+  {
+    /* TODO: proper exception */
+    schro_encoder_free(tmp_enc->encoder);
+    free(tmp_enc);
+    free(video_format);
+    caml_failwith("invalid header: length too short");
+  }
+  if (header_len > op.bytes)
+  {
+    /* TODO: proper exception */
+    schro_encoder_free(tmp_enc->encoder);
+    free(tmp_enc);
+    free(video_format);
+    caml_failwith("invalid header: length too big");
+  }
+  op.b_o_s = 1;
+  op.e_o_s = 0;
+  op.bytes = header_len;
+  op.granulepos = 0;
+
+  /* Put the packet in the ogg stream. */
+  ogg_stream_packetin(os, &op);
+
+  /* Clean temporary encoder and op.packet */
+  free(op.packet);
+  schro_encoder_free(tmp_enc->encoder);
+  free(tmp_enc);
+  free(video_format);
+
+  CAMLreturn(Val_unit);
+}
