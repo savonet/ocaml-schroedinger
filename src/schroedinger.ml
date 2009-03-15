@@ -369,3 +369,22 @@ struct
 
 end
 
+module Skeleton =
+struct
+
+  external fisbone : Nativeint.t -> internal_video_format -> 
+                     Int64.t -> string -> Ogg.Stream.packet = "ocaml_schroedinger_skeleton_fisbone"
+
+  let fisbone ?(start_granule=Int64.zero)
+              ?(headers=["Content-type","video/dirac"])
+              ~serialno ~format () =
+    let concat s (h,v) =
+      Printf.sprintf "%s%s: %s\r\n" s h v
+    in
+    let s =
+      List.fold_left concat "" headers
+    in
+    fisbone serialno (internal_video_format_of_video_format format) 
+            start_granule s
+
+end
