@@ -342,8 +342,6 @@ let internal_frame_of_frame f =
     int_format = int_of_format f.format
   }
   
-external frames_of_granulepos : Int64.t -> Int64.t = "ocaml_schroedinger_frames_of_granulepos"
-
 module Encoder = 
 struct
 
@@ -366,6 +364,8 @@ struct
   external encode_frame : t -> internal_frame -> Ogg.Stream.t -> unit = "ocaml_schroedinger_encode_frame" 
 
   let encode_frame t f = encode_frame t (internal_frame_of_frame f)
+
+  external frames_of_granulepos : Int64.t -> t -> Int64.t = "ocaml_schroedinger_frames_of_granulepos"
 
 end
 
