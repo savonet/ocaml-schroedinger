@@ -349,8 +349,8 @@ static void calculate_granulepos(encoder_t *dd, ogg_packet *op, ogg_int64_t *pts
    delay = pt - dt;
     if (!dd->format.interlaced_coding)
     {
-      pt <<= 1;
-      delay <<= 1;
+      pt *= 2;
+      delay *= 2;
     }
     dist = dd->distance_from_sync;
 
@@ -377,7 +377,7 @@ CAMLprim value ocaml_schroedinger_frames_of_granulepos(value _granulepos, value 
 
   if (!enc->format.interlaced_coding)
   {
-    ret = ROUND_UP_SHIFT(ret,1);
+    ret /= 2;
   }
 
   CAMLreturn(caml_copy_int64(ret));
@@ -397,7 +397,7 @@ CAMLprim value ocaml_schroedinger_encoded_of_granulepos(value _granulepos, value
 
   if (!enc->format.interlaced_coding)
   {
-    ret = ROUND_UP_SHIFT(ret,1);
+    ret /= 2;
   }
 
   CAMLreturn(caml_copy_int64(ret));
