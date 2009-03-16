@@ -301,6 +301,7 @@ typedef struct {
   int distance_from_sync;
   ogg_int64_t presentation_frame_number;
   ogg_int64_t presented_frame_number;
+  ogg_int64_t encoded_frame_number;
   ogg_int64_t packet_no;
 } encoder_t;
 
@@ -326,23 +327,26 @@ static struct custom_operations schro_enc_ops =
 /* Granule shift is always 22 for Dirac */
 static const int DIRAC_GRANULE_SHIFT = 22;
 
-/* This may change later */
-#define SCHRO_DELAY 1
-
 static void calculate_granulepos(encoder_t *dd, ogg_packet *op, ogg_int64_t *pts)
 {
     ogg_int64_t granulepos_hi;
     ogg_int64_t granulepos_low;
-    int pt, dist, delay;
+    int dt, pt, dist, delay;
+    int update = 0;
     if (dd->is_sync_point)
         dd->distance_from_sync = 0;
     else
         dd->distance_from_sync++;
 
-   if (pts != NULL)
-       dd->presented_frame_number = *pts;
-    pt = dd->presented_frame_number;
-    delay = SCHRO_DELAY;
+   if (pts != NULL) 
+   {
+     if (dd->presented_frame_number != *pts)
+       update = 1;
+     dd->presented_frame_number = *pts;
+   }
+   dt = dd->encoded_frame_number;
+   pt = dd->presented_frame_number;
+   delay = pt - dt;
     if (!dd->format.interlaced_coding)
     {
       pt <<= 1;
@@ -355,6 +359,8 @@ static void calculate_granulepos(encoder_t *dd, ogg_packet *op, ogg_int64_t *pts
 
     op->granulepos = (granulepos_hi << DIRAC_GRANULE_SHIFT) | (granulepos_low);
     op->packetno = dd->packet_no++;
+    if (update == 1)
+      dd->encoded_frame_number++;
 }
 
 CAMLprim value ocaml_schroedinger_frames_of_granulepos(value _granulepos, value _enc)
@@ -383,6 +389,7 @@ encoder_t *create_enc(SchroVideoFormat *format)
   if (enc == NULL)
     caml_failwith("malloc"); 
 
+  enc->encoded_frame_number = -1;
   enc->presentation_frame_number = 0;
   enc->presented_frame_number = 0;
   enc->distance_from_sync = 0;
