@@ -129,6 +129,8 @@ sig
 
   val frames_of_granulepos : Int64.t -> t -> Int64.t
 
+  val encoded_of_granulepos : Int64.t -> t -> Int64.t
+
   val eos : t -> Ogg.Stream.t -> unit
 
 end

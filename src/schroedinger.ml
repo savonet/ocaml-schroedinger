@@ -367,6 +367,8 @@ struct
 
   external frames_of_granulepos : Int64.t -> t -> Int64.t = "ocaml_schroedinger_frames_of_granulepos"
 
+  external encoded_of_granulepos : Int64.t -> t -> Int64.t = "ocaml_schroedinger_encoded_of_granulepos"
+
 end
 
 module Skeleton =

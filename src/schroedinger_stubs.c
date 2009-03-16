@@ -383,6 +383,26 @@ CAMLprim value ocaml_schroedinger_frames_of_granulepos(value _granulepos, value 
   CAMLreturn(caml_copy_int64(ret));
 }
 
+CAMLprim value ocaml_schroedinger_encoded_of_granulepos(value _granulepos, value _enc)
+{
+  CAMLparam2(_granulepos, _enc);
+  ogg_int64_t granulepos = Int64_val(_granulepos);
+  encoder_t *enc = Schro_enc_val(_enc);
+  ogg_int64_t ret;
+
+  if (granulepos == -1)
+      CAMLreturn(caml_copy_int64(-1));
+
+  ret = granulepos >> 31;
+
+  if (!enc->format.interlaced_coding)
+  {
+    ret = ROUND_UP_SHIFT(ret,1);
+  }
+
+  CAMLreturn(caml_copy_int64(ret));
+}
+
 encoder_t *create_enc(SchroVideoFormat *format)
 {
   encoder_t *enc = malloc(sizeof(encoder_t));
