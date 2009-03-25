@@ -292,6 +292,126 @@ CAMLprim value ocaml_schroedinger_get_default_video_format(value index)
   CAMLreturn(ret);
 }
 
+/* Settings */
+
+static double double_of_setting(value n, value v)
+{
+  char *s = String_val(n);
+
+  if (!strcmp(s,"rate_control")) return (double)Int_val(v);
+  if (!strcmp(s,"bitrate")) return (double)Int_val(v);
+  if (!strcmp(s,"max_bitrate")) return (double)Int_val(v);
+  if (!strcmp(s,"min_bitrate")) return (double)Int_val(v);
+  if (!strcmp(s,"buffer_size")) return (double)Int_val(v);
+  if (!strcmp(s,"buffer_level")) return (double)Int_val(v);
+  if (!strcmp(s,"noise_threshold")) return Double_val(v);
+  if (!strcmp(s,"gop_structure")) return (double)Int_val(v);
+  if (!strcmp(s,"queue_depth")) return (double)Int_val(v);
+  if (!strcmp(s,"perceptual_weighting")) return (double)Int_val(v);
+  if (!strcmp(s,"perceptual_distance")) return Double_val(v);
+  if (!strcmp(s,"filtering")) return (double)Int_val(v);
+  if (!strcmp(s,"filter_value")) return Double_val(v);
+  if (!strcmp(s,"profile")) return (double)Int_val(v);
+  if (!strcmp(s,"level")) return (double)Int_val(v);
+  if (!strcmp(s,"au_distance")) return (double)Int_val(v);
+  if (!strcmp(s,"enable_psnr")) return (double)Bool_val(v);
+  if (!strcmp(s,"enable_ssim")) return (double)Bool_val(v);
+  if (!strcmp(s,"ref_distance")) return (double)Int_val(v);
+  if (!strcmp(s,"transform_depth")) return (double)Int_val(v);
+  if (!strcmp(s,"intra_wavelet")) return (double)Int_val(v);
+  if (!strcmp(s,"inter_wavelet")) return (double)Int_val(v);
+  if (!strcmp(s,"mv_precision")) return (double)Int_val(v);
+  if (!strcmp(s,"motion_block_size")) return (double)Int_val(v);
+  if (!strcmp(s,"motion_block_overlap")) return (double)Int_val(v);
+  if (!strcmp(s,"interlaced_coding")) return (double)Bool_val(v);
+  if (!strcmp(s,"enable_internal_testing")) return (double)Bool_val(v);
+  if (!strcmp(s,"enable_noarith")) return (double)Bool_val(v);
+  if (!strcmp(s,"enable_md5")) return (double)Bool_val(v);
+  if (!strcmp(s,"enable_fullscan_estimation")) return (double)Bool_val(v);
+  if (!strcmp(s,"enable_hierarchical_estimation")) return (double)Bool_val(v);
+  if (!strcmp(s,"enable_zero_estimation")) return (double)Bool_val(v);
+  if (!strcmp(s,"enable_phasecorr_estimation")) return (double)Bool_val(v);
+  if (!strcmp(s,"enable_bigblock_estimation")) return (double)Bool_val(v);
+  if (!strcmp(s,"horiz_slices")) return (double)Int_val(v);
+  if (!strcmp(s,"vert_slices")) return (double)Int_val(v);
+  if (!strcmp(s,"magic_dc_metric_offset")) return Double_val(v);
+  if (!strcmp(s,"magic_subband0_lambda_scale")) return Double_val(v);
+  if (!strcmp(s,"magic_chroma_lambda_scale")) return Double_val(v);
+  if (!strcmp(s,"magic_nonref_lambda_scale")) return Double_val(v);
+  if (!strcmp(s,"magic_allocation_scale")) return Double_val(v);
+  if (!strcmp(s,"magic_keyframe_weight")) return Double_val(v);
+  if (!strcmp(s,"magic_scene_change_threshold")) return Double_val(v);
+  if (!strcmp(s,"magic_inter_p_weight")) return Double_val(v);
+  if (!strcmp(s,"magic_inter_b_weight")) return Double_val(v);
+  if (!strcmp(s,"magic_mc_bailout_limit")) return Double_val(v);
+  if (!strcmp(s,"magic_bailout_weight")) return Double_val(v);
+  if (!strcmp(s,"magic_error_power")) return Double_val(v);
+  if (!strcmp(s,"magic_mc_lambda")) return Double_val(v);
+  if (!strcmp(s,"magic_subgroup_length")) return Double_val(v);
+  if (!strcmp(s,"magic_lambda")) return Double_val(v);
+
+  caml_failwith("unknown value");
+}
+
+static value setting_of_double(value n, double v)
+{
+  char *s = String_val(n);
+
+  if (!strcmp(s,"rate_control")) return Val_int((int)v);
+  if (!strcmp(s,"bitrate")) return Val_int((int)v);
+  if (!strcmp(s,"max_bitrate")) return Val_int((int)v);
+  if (!strcmp(s,"min_bitrate")) return Val_int((int)v);
+  if (!strcmp(s,"buffer_size")) return Val_int((int)v);
+  if (!strcmp(s,"buffer_level")) return Val_int((int)v);
+  if (!strcmp(s,"noise_threshold")) return caml_copy_double(v);
+  if (!strcmp(s,"gop_structure")) return Val_int((int)v);
+  if (!strcmp(s,"queue_depth")) return Val_int((int)v);
+  if (!strcmp(s,"perceptual_weighting")) return Val_int((int)v);
+  if (!strcmp(s,"perceptual_distance")) return caml_copy_double(v);
+  if (!strcmp(s,"filtering")) return Val_int((int)v);
+  if (!strcmp(s,"filter_value")) return caml_copy_double(v);
+  if (!strcmp(s,"profile")) return Val_int((int)v);
+  if (!strcmp(s,"level")) return Val_int((int)v);
+  if (!strcmp(s,"au_distance")) return Val_int((int)v);
+  if (!strcmp(s,"enable_psnr")) return Val_bool((int)v);
+  if (!strcmp(s,"enable_ssim")) return Val_bool((int)v);
+  if (!strcmp(s,"ref_distance")) return Val_int((int)v);
+  if (!strcmp(s,"transform_depth")) return Val_int((int)v);
+  if (!strcmp(s,"intra_wavelet")) return Val_int((int)v);
+  if (!strcmp(s,"inter_wavelet")) return Val_int((int)v);
+  if (!strcmp(s,"mv_precision")) return Val_int((int)v);
+  if (!strcmp(s,"motion_block_size")) return Val_int((int)v);
+  if (!strcmp(s,"motion_block_overlap")) return Val_int((int)v);
+  if (!strcmp(s,"interlaced_coding")) return Val_bool((int)v);
+  if (!strcmp(s,"enable_internal_testing")) return Val_bool((int)v);
+  if (!strcmp(s,"enable_noarith")) return Val_bool((int)v);
+  if (!strcmp(s,"enable_md5")) return Val_bool((int)v);
+  if (!strcmp(s,"enable_fullscan_estimation")) return Val_bool((int)v);
+  if (!strcmp(s,"enable_hierarchical_estimation")) return Val_bool((int)v);
+  if (!strcmp(s,"enable_zero_estimation")) return Val_bool((int)v);
+  if (!strcmp(s,"enable_phasecorr_estimation")) return Val_bool((int)v);
+  if (!strcmp(s,"enable_bigblock_estimation")) return Val_bool((int)v);
+  if (!strcmp(s,"horiz_slices")) return Val_int((int)v);
+  if (!strcmp(s,"vert_slices")) return Val_int((int)v);
+  if (!strcmp(s,"magic_dc_metric_offset")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_subband0_lambda_scale")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_chroma_lambda_scale")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_nonref_lambda_scale")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_allocation_scale")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_keyframe_weight")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_scene_change_threshold")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_inter_p_weight")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_inter_b_weight")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_mc_bailout_limit")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_bailout_weight")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_error_power")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_mc_lambda")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_subgroup_length")) return caml_copy_double(v);
+  if (!strcmp(s,"magic_lambda")) return caml_copy_double(v);
+
+  caml_failwith("unknown value");
+}
+
 /* Encoding */
 
 typedef struct {
@@ -538,7 +658,6 @@ CAMLprim value ocaml_schroedinger_enc_eos(value _enc, value _os)
   CAMLreturn(Val_unit);
 }
 
-
 CAMLprim value ocaml_schroedinger_encode_frame(value _enc, value frame, value _os)
 {
   CAMLparam3(_enc, frame, _os);
@@ -655,6 +774,23 @@ CAMLprim value ocaml_schroedinger_encode_header(value _enc, value _os)
   free(tmp_enc);
 
   CAMLreturn(Val_unit);
+}
+
+CAMLprim value ocaml_schroedinger_set_setting(value _enc, value _name, value _val)
+{
+  CAMLparam2(_enc,_name);
+  encoder_t *enc = Schro_enc_val(_enc);
+  schro_encoder_setting_set_double(enc->encoder,String_val(_name),double_of_setting(_name,_val));
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value ocaml_schroedinger_get_setting(value _enc, value _name)
+{
+  CAMLparam2(_enc,_name);
+  CAMLlocal1(ret);
+  encoder_t *enc = Schro_enc_val(_enc);
+  double x = schro_encoder_setting_get_double(enc->encoder,String_val(_name));
+  CAMLreturn(setting_of_double(_name,x));
 }
 
 /* Ogg skeleton interface */

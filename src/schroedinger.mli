@@ -133,6 +133,115 @@ sig
 
   val eos : t -> Ogg.Stream.t -> unit
 
+  type rate_control = 
+    | Constant_noise_threshold
+    | Constant_bitrate
+    | Low_delay
+    | Lossless
+    | Constant_lambda
+    | Constant_error
+  
+  type gop_structure = 
+    | Adaptive
+    | Intra_only
+    | Backref
+    | Chained_backref
+    | Biref
+    | Chained_biref 
+  
+  type perceptual_weighting = 
+    | None
+    | Ccir959
+    | Moo
+    | Manos_sakrison
+  
+  type filtering = 
+    | None
+    | Center_weighted_median
+    | Gaussian
+    | Add_noise
+    | Adaptive_gaussian 
+  
+  type wavelet = 
+    | Desl_dubuc_9_7
+    | Le_gall_5_3
+    | Desl_dubuc_13_7
+    | Haar_0
+    | Haar_1
+    | Fidelity
+    | Daub_9_7
+  
+  type block_size = 
+    | Automatic
+    | Small
+    | Medium
+    | Large
+  
+  type block_overlap = 
+    | Automatic
+    | None
+    | Partial
+    | Full 
+
+  type settings = 
+  {
+    rate_control: rate_control;
+    bitrate: int;
+    max_bitrate: int;
+    min_bitrate: int;
+    buffer_size: int;
+    buffer_level: int;
+    noise_threshold: float;
+    gop_structure: gop_structure;
+    queue_depth: int;
+    perceptual_weighting: perceptual_weighting;
+    perceptual_distance: float;
+    filtering: filtering;
+    filter_value: float;
+    profile: int;
+    level: int;
+    au_distance: int;
+    enable_psnr: bool;
+    enable_ssim: bool;
+    ref_distance: int;
+    transform_depth: int;
+    intra_wavelet: wavelet;
+    inter_wavelet: wavelet;
+    mv_precision: int;
+    motion_block_size: block_size;
+    motion_block_overlap: block_overlap;
+    interlaced_coding: bool;
+    enable_internal_testing: bool;
+    enable_noarith: bool;
+    enable_md5: bool;
+    enable_fullscan_estimation: bool;
+    enable_hierarchical_estimation: bool;
+    enable_zero_estimation: bool;
+    enable_phasecorr_estimation: bool;
+    enable_bigblock_estimation: bool;
+    horiz_slices: int;
+    vert_slices: int;
+    magic_dc_metric_offset: float;
+    magic_subband0_lambda_scale: float;
+    magic_chroma_lambda_scale: float;
+    magic_nonref_lambda_scale: float;
+    magic_allocation_scale: float;
+    magic_keyframe_weight: float;
+    magic_scene_change_threshold: float;
+    magic_inter_p_weight: float;
+    magic_inter_b_weight: float;
+    magic_mc_bailout_limit: float;
+    magic_bailout_weight: float;
+    magic_error_power: float;
+    magic_mc_lambda: float;
+    magic_subgroup_length: float;
+    magic_lambda: float
+  }
+
+  val get_settings : t -> settings
+
+  val set_settings : t -> settings -> unit
+
 end
 
 module Skeleton :

@@ -341,7 +341,7 @@ let internal_frame_of_frame f =
     int_height = f.frame_height;
     int_format = int_of_format f.format
   }
-  
+
 module Encoder = 
 struct
 
@@ -369,6 +369,222 @@ struct
 
   external encoded_of_granulepos : Int64.t -> t -> Int64.t = "ocaml_schroedinger_encoded_of_granulepos"
 
+  type rate_control = 
+    | Constant_noise_threshold
+    | Constant_bitrate
+    | Low_delay
+    | Lossless
+    | Constant_lambda
+    | Constant_error
+  
+  type gop_structure = 
+    | Adaptive
+    | Intra_only
+    | Backref
+    | Chained_backref
+    | Biref
+    | Chained_biref 
+  
+  type perceptual_weighting = 
+    | None
+    | Ccir959
+    | Moo
+    | Manos_sakrison
+  
+  type filtering = 
+    | None
+    | Center_weighted_median
+    | Gaussian
+    | Add_noise
+    | Adaptive_gaussian 
+  
+  type wavelet = 
+    | Desl_dubuc_9_7
+    | Le_gall_5_3
+    | Desl_dubuc_13_7
+    | Haar_0
+    | Haar_1
+    | Fidelity
+    | Daub_9_7
+  
+  type block_size = 
+    | Automatic
+    | Small
+    | Medium
+    | Large
+  
+  type block_overlap = 
+    | Automatic
+    | None
+    | Partial
+    | Full 
+
+  type settings = 
+  {
+    rate_control: rate_control;
+    bitrate: int;
+    max_bitrate: int;
+    min_bitrate: int;
+    buffer_size: int;
+    buffer_level: int;
+    noise_threshold: float;
+    gop_structure: gop_structure;
+    queue_depth: int;
+    perceptual_weighting: perceptual_weighting;
+    perceptual_distance: float;
+    filtering: filtering;
+    filter_value: float;
+    profile: int;
+    level: int;
+    au_distance: int;
+    enable_psnr: bool;
+    enable_ssim: bool;
+    ref_distance: int;
+    transform_depth: int;
+    intra_wavelet: wavelet;
+    inter_wavelet: wavelet;
+    mv_precision: int;
+    motion_block_size: block_size;
+    motion_block_overlap: block_overlap;
+    interlaced_coding: bool;
+    enable_internal_testing: bool;
+    enable_noarith: bool;
+    enable_md5: bool;
+    enable_fullscan_estimation: bool;
+    enable_hierarchical_estimation: bool;
+    enable_zero_estimation: bool;
+    enable_phasecorr_estimation: bool;
+    enable_bigblock_estimation: bool;
+    horiz_slices: int;
+    vert_slices: int;
+    magic_dc_metric_offset: float;
+    magic_subband0_lambda_scale: float;
+    magic_chroma_lambda_scale: float;
+    magic_nonref_lambda_scale: float;
+    magic_allocation_scale: float;
+    magic_keyframe_weight: float;
+    magic_scene_change_threshold: float;
+    magic_inter_p_weight: float;
+    magic_inter_b_weight: float;
+    magic_mc_bailout_limit: float;
+    magic_bailout_weight: float;
+    magic_error_power: float;
+    magic_mc_lambda: float;
+    magic_subgroup_length: float;
+    magic_lambda: float
+  }
+
+  external set_setting : t -> string -> 'a -> unit = "ocaml_schroedinger_set_setting"
+
+  let set_settings enc x = 
+    set_setting enc "rate_control" x.rate_control;
+    set_setting enc "bitrate" x.bitrate;
+    set_setting enc "max_bitrate" x.max_bitrate;
+    set_setting enc "min_bitrate" x.min_bitrate;
+    set_setting enc "buffer_size" x.buffer_size;
+    set_setting enc "buffer_level" x.buffer_level;
+    set_setting enc "noise_threshold" x.noise_threshold;
+    set_setting enc "gop_structure" x.gop_structure;
+    set_setting enc "queue_depth" x.queue_depth;
+    set_setting enc "perceptual_weighting" x.perceptual_weighting;
+    set_setting enc "perceptual_distance" x.perceptual_distance;
+    set_setting enc "filtering" x.filtering;
+    set_setting enc "filter_value" x.filter_value;
+    set_setting enc "profile" x.profile;
+    set_setting enc "level" x.level;
+    set_setting enc "au_distance" x.au_distance;
+    set_setting enc "enable_psnr" x.enable_psnr;
+    set_setting enc "enable_ssim" x.enable_ssim;
+    set_setting enc "ref_distance" x.ref_distance;
+    set_setting enc "transform_depth" x.transform_depth;
+    set_setting enc "intra_wavelet" x.intra_wavelet;
+    set_setting enc "inter_wavelet" x.inter_wavelet;
+    set_setting enc "mv_precision" x.mv_precision;
+    set_setting enc "motion_block_size" x.motion_block_size;
+    set_setting enc "motion_block_overlap" x.motion_block_overlap;
+    set_setting enc "interlaced_coding" x.interlaced_coding;
+    set_setting enc "enable_internal_testing" x.enable_internal_testing;
+    set_setting enc "enable_noarith" x.enable_noarith;
+    set_setting enc "enable_md5" x.enable_md5;
+    set_setting enc "enable_fullscan_estimation" x.enable_fullscan_estimation;
+    set_setting enc "enable_hierarchical_estimation" x.enable_hierarchical_estimation;
+    set_setting enc "enable_zero_estimation" x.enable_zero_estimation;
+    set_setting enc "enable_phasecorr_estimation" x.enable_phasecorr_estimation;
+    set_setting enc "enable_bigblock_estimation" x.enable_bigblock_estimation;
+    set_setting enc "horiz_slices" x.horiz_slices;
+    set_setting enc "vert_slices" x.vert_slices;
+    set_setting enc "magic_dc_metric_offset" x.magic_dc_metric_offset;
+    set_setting enc "magic_subband0_lambda_scale" x.magic_subband0_lambda_scale;
+    set_setting enc "magic_chroma_lambda_scale" x.magic_chroma_lambda_scale;
+    set_setting enc "magic_nonref_lambda_scale" x.magic_nonref_lambda_scale;
+    set_setting enc "magic_allocation_scale" x.magic_allocation_scale;
+    set_setting enc "magic_keyframe_weight" x.magic_keyframe_weight;
+    set_setting enc "magic_scene_change_threshold" x.magic_scene_change_threshold;
+    set_setting enc "magic_inter_p_weight" x.magic_inter_p_weight;
+    set_setting enc "magic_inter_b_weight" x.magic_inter_b_weight;
+    set_setting enc "magic_mc_bailout_limit" x.magic_mc_bailout_limit;
+    set_setting enc "magic_bailout_weight" x.magic_bailout_weight;
+    set_setting enc "magic_error_power" x.magic_error_power;
+    set_setting enc "magic_mc_lambda" x.magic_mc_lambda;
+    set_setting enc "magic_subgroup_length" x.magic_subgroup_length;
+    set_setting enc "magic_lambda" x.magic_lambda
+
+  external get_setting : t -> string -> 'a = "ocaml_schroedinger_get_setting"
+
+  let get_settings enc = 
+   {
+    rate_control = get_setting enc "rate_control";
+    bitrate = get_setting enc "bitrate";
+    max_bitrate = get_setting enc "max_bitrate";
+    min_bitrate = get_setting enc "min_bitrate";
+    buffer_size = get_setting enc "buffer_size";
+    buffer_level = get_setting enc "buffer_level";
+    noise_threshold = get_setting enc "noise_threshold";
+    gop_structure = get_setting enc "gop_structure";
+    queue_depth = get_setting enc "queue_depth";
+    perceptual_weighting = get_setting enc "perceptual_weighting";
+    perceptual_distance = get_setting enc "perceptual_distance";
+    filtering = get_setting enc "filtering";
+    filter_value = get_setting enc "filter_value";
+    profile = get_setting enc "profile";
+    level = get_setting enc "level";
+    au_distance = get_setting enc "au_distance";
+    enable_psnr = get_setting enc "enable_psnr";
+    enable_ssim = get_setting enc "enable_ssim";
+    ref_distance = get_setting enc "ref_distance";
+    transform_depth = get_setting enc "transform_depth";
+    intra_wavelet = get_setting enc "intra_wavelet";
+    inter_wavelet = get_setting enc "inter_wavelet";
+    mv_precision = get_setting enc "mv_precision";
+    motion_block_size = get_setting enc "motion_block_size";
+    motion_block_overlap = get_setting enc "motion_block_overlap";
+    interlaced_coding = get_setting enc "interlaced_coding";
+    enable_internal_testing = get_setting enc "enable_internal_testing";
+    enable_noarith = get_setting enc "enable_noarith";
+    enable_md5 = get_setting enc "enable_md5";
+    enable_fullscan_estimation = get_setting enc "enable_fullscan_estimation";
+    enable_hierarchical_estimation = get_setting enc "enable_hierarchical_estimation";
+    enable_zero_estimation = get_setting enc "enable_zero_estimation";
+    enable_phasecorr_estimation = get_setting enc "enable_phasecorr_estimation";
+    enable_bigblock_estimation = get_setting enc "enable_bigblock_estimation";
+    horiz_slices = get_setting enc "horiz_slices";
+    vert_slices = get_setting enc "vert_slices";
+    magic_dc_metric_offset = get_setting enc "magic_dc_metric_offset";
+    magic_subband0_lambda_scale = get_setting enc "magic_subband0_lambda_scale";
+    magic_chroma_lambda_scale = get_setting enc "magic_chroma_lambda_scale";
+    magic_nonref_lambda_scale = get_setting enc "magic_nonref_lambda_scale";
+    magic_allocation_scale = get_setting enc "magic_allocation_scale";
+    magic_keyframe_weight = get_setting enc "magic_keyframe_weight";
+    magic_scene_change_threshold = get_setting enc "magic_scene_change_threshold";
+    magic_inter_p_weight = get_setting enc "magic_inter_p_weight";
+    magic_inter_b_weight = get_setting enc "magic_inter_b_weight";
+    magic_mc_bailout_limit = get_setting enc "magic_mc_bailout_limit";
+    magic_bailout_weight = get_setting enc "magic_bailout_weight";
+    magic_error_power = get_setting enc "magic_error_power";
+    magic_mc_lambda = get_setting enc "magic_mc_lambda";
+    magic_subgroup_length = get_setting enc "magic_subgroup_length";
+    magic_lambda = get_setting enc "magic_lambda"
+   }
 end
 
 module Skeleton =
