@@ -1,7 +1,3 @@
-0.1.1 ()
-=====
-* Fixed Makefile for BSD: call $(MAKE) for generating documentation.
-
 0.1.0
 =====
 * Initial release
