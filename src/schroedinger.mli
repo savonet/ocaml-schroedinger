@@ -244,6 +244,15 @@ sig
 
 end
 
+module Decoder :
+sig
+
+  type t
+
+  val create : unit -> t
+
+end
+
 module Skeleton :
 sig
 

@@ -554,6 +554,7 @@ encoder_t *create_enc(SchroVideoFormat *format)
     caml_failwith("invalid format");
   }
 
+  schro_encoder_set_packet_assembly(enc->encoder, 1);
   schro_encoder_set_video_format(enc->encoder, format);
   schro_encoder_start(enc->encoder);
 
@@ -791,6 +792,38 @@ CAMLprim value ocaml_schroedinger_get_setting(value _enc, value _name)
   encoder_t *enc = Schro_enc_val(_enc);
   double x = schro_encoder_setting_get_double(enc->encoder,String_val(_name));
   CAMLreturn(setting_of_double(_name,x));
+}
+
+/* Decoder */
+
+#define Schro_dec_val(v) (*((SchroDecoder **)Data_custom_val(v)))
+
+static void finalize_schro_dec(value v)
+{
+  SchroDecoder *dec = Schro_dec_val(v);
+  schro_decoder_free(dec);
+}
+
+static struct custom_operations schro_dec_ops =
+{
+  "ocaml_gavl_schro_dec",
+  finalize_schro_dec,
+  custom_compare_default,
+  custom_hash_default,
+  custom_serialize_default,
+  custom_deserialize_default
+};
+
+CAMLprim value ocaml_schroedinger_create_dec(value unit)
+{
+  CAMLparam0();
+  CAMLlocal1(ret);
+  SchroDecoder *dec = schro_decoder_new();
+
+  ret = caml_alloc_custom(&schro_dec_ops, sizeof(SchroDecoder*), 1, 0);
+  Schro_dec_val(ret) = dec;
+
+  CAMLreturn(ret);
 }
 
 /* Ogg skeleton interface */

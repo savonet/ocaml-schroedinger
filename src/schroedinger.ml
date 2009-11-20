@@ -587,6 +587,15 @@ struct
    }
 end
 
+module Decoder = 
+struct
+
+  type t
+
+  external create : unit -> t = "ocaml_schroedinger_create_dec"
+
+end
+
 module Skeleton =
 struct
 
