@@ -182,6 +182,30 @@ let transfer_function_of_int x =
     | x when x = int_of_define "SCHRO_TRANSFER_CHAR_DCI_GAMMA" -> DCI_GAMMA
     | _ -> assert false
 
+type signal_range = 
+  | RANGE_CUSTOM
+  | RANGE_8BIT_FULL
+  | RANGE_8BIT_VIDEO
+  | RANGE_10BIT_VIDEO
+  | RANGE_12BIT_VIDEO
+
+let int_of_signal_range x =
+  match x with
+  | RANGE_CUSTOM -> int_of_define "SCHRO_SIGNAL_RANGE_CUSTOM"
+  | RANGE_8BIT_FULL -> int_of_define "SCHRO_SIGNAL_RANGE_8BIT_FULL"
+  | RANGE_8BIT_VIDEO -> int_of_define "SCHRO_SIGNAL_RANGE_8BIT_VIDEO"
+  | RANGE_10BIT_VIDEO -> int_of_define "SCHRO_SIGNAL_RANGE_10BIT_VIDEO"
+  | RANGE_12BIT_VIDEO -> int_of_define "SCHRO_SIGNAL_RANGE_12BIT_VIDEO"
+
+let signal_range_of_int x = 
+  match x with
+    | x when x = int_of_define "SCHRO_SIGNAL_RANGE_CUSTOM" -> RANGE_CUSTOM
+    | x when x = int_of_define "SCHRO_SIGNAL_RANGE_8BIT_FULL" -> RANGE_8BIT_FULL
+    | x when x = int_of_define "SCHRO_SIGNAL_RANGE_8BIT_VIDEO" -> RANGE_8BIT_VIDEO
+    | x when x = int_of_define "SCHRO_SIGNAL_RANGE_10BIT_VIDEO" -> RANGE_10BIT_VIDEO
+    | x when x = int_of_define "SCHRO_SIGNAL_RANGE_12BIT_VIDEO" -> RANGE_12BIT_VIDEO
+    | _ -> assert false
+
 type video_format = 
  {
   video_type : video_type;
@@ -212,6 +236,8 @@ type video_format =
   transfer_function : transfer_function;
 
   interlaced_coding : bool;
+
+  signal_range : signal_range;
  }
 
 type internal_video_format = 
@@ -244,6 +270,8 @@ type internal_video_format =
   int_transfer_function : int;
 
   int_interlaced_coding : bool;
+
+  int_signal_range : int;
  }
 
 let internal_video_format_of_video_format x = 
@@ -275,7 +303,9 @@ let internal_video_format_of_video_format x =
   int_colour_matrix = int_of_colour_matrix x.colour_matrix;
   int_transfer_function = int_of_transfer_function x.transfer_function;
 
-  int_interlaced_coding = x.interlaced_coding
+  int_interlaced_coding = x.interlaced_coding;
+
+  int_signal_range = int_of_signal_range x.signal_range
  }
 
 let video_format_of_internal_video_format x =
@@ -307,7 +337,9 @@ let video_format_of_internal_video_format x =
   colour_matrix = colour_matrix_of_int x.int_colour_matrix;
   transfer_function = transfer_function_of_int x.int_transfer_function;
 
-  interlaced_coding = x.int_interlaced_coding
+  interlaced_coding = x.int_interlaced_coding;
+
+  signal_range = signal_range_of_int x.int_signal_range
  }
 
 external get_default_internal_video_format : int -> internal_video_format = "ocaml_schroedinger_get_default_video_format"

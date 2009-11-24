@@ -71,6 +71,13 @@ type transfer_function =
   | LINEAR
   | DCI_GAMMA
 
+type signal_range =
+  | RANGE_CUSTOM
+  | RANGE_8BIT_FULL
+  | RANGE_8BIT_VIDEO
+  | RANGE_10BIT_VIDEO
+  | RANGE_12BIT_VIDEO
+
 type video_format = 
  {
   video_type : video_type;
@@ -101,6 +108,8 @@ type video_format =
   transfer_function : transfer_function;
 
   interlaced_coding : bool;
+
+  signal_range : signal_range
  }
 
 val get_default_video_format : video_type -> video_format

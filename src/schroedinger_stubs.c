@@ -214,6 +214,17 @@ CAMLprim value ocaml_schroedinger_int_of_define(value v)
     CAMLreturn(Val_int(SCHRO_TRANSFER_CHAR_LINEAR)) ;
   if (!strcmp(s,"SCHRO_TRANSFER_CHAR_DCI_GAMMA"))
     CAMLreturn(Val_int(SCHRO_TRANSFER_CHAR_DCI_GAMMA)) ;
+  if (!strcmp(s,"SCHRO_SIGNAL_RANGE_CUSTOM"))
+    CAMLreturn(Val_int(SCHRO_SIGNAL_RANGE_CUSTOM)) ;
+  if (!strcmp(s,"SCHRO_SIGNAL_RANGE_8BIT_FULL"))
+    CAMLreturn(Val_int(SCHRO_SIGNAL_RANGE_8BIT_FULL)) ;
+  if (!strcmp(s,"SCHRO_SIGNAL_RANGE_8BIT_VIDEO"))
+    CAMLreturn(Val_int(SCHRO_SIGNAL_RANGE_8BIT_VIDEO)) ;
+  if (!strcmp(s,"SCHRO_SIGNAL_RANGE_10BIT_VIDEO"))
+    CAMLreturn(Val_int(SCHRO_SIGNAL_RANGE_10BIT_VIDEO)) ;
+  if (!strcmp(s,"SCHRO_SIGNAL_RANGE_12BIT_VIDEO"))
+    CAMLreturn(Val_int(SCHRO_SIGNAL_RANGE_12BIT_VIDEO)) ;
+
 
   caml_failwith("unknown value");
 }
@@ -244,6 +255,7 @@ static SchroVideoFormat *schro_video_format_of_val(value v, SchroVideoFormat *fo
   format->colour_matrix = Int_val(Field(v, i++));
   format->transfer_function = Int_val(Field(v, i++));
   format->interlaced_coding = Bool_val(Field(v, i++)); 
+  schro_video_format_set_std_signal_range(format, Int_val(Field(v, i++)));
 
   return format;
 }
@@ -253,7 +265,7 @@ static value value_of_video_format(SchroVideoFormat *format)
   CAMLparam0();
   CAMLlocal1(v);
   int i = 0;
-  v = caml_alloc_tuple(22);
+  v = caml_alloc_tuple(23);
   Store_field (v, i++, Val_int(format->index));
   Store_field (v, i++, Val_int(format->width));
   Store_field (v, i++, Val_int(format->height));
@@ -276,6 +288,7 @@ static value value_of_video_format(SchroVideoFormat *format)
   Store_field (v, i++, Val_int(format->colour_matrix));
   Store_field (v, i++, Val_int(format->transfer_function));
   Store_field (v, i++, Val_bool(format->interlaced_coding));
+  Store_field (v, i++, Val_int(schro_video_format_get_std_signal_range(format)));
 
   CAMLreturn(v);
 }
@@ -554,7 +567,7 @@ encoder_t *create_enc(SchroVideoFormat *format)
     caml_failwith("invalid format");
   }
 
-  schro_encoder_set_packet_assembly(enc->encoder, 1);
+  schro_encoder_set_packet_assembly(enc->encoder, TRUE);
   schro_encoder_set_video_format(enc->encoder, format);
   schro_encoder_start(enc->encoder);
 
