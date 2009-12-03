@@ -256,9 +256,21 @@ end
 module Decoder :
 sig
 
+  exception Invalid_header
+  exception Skipped_frame
+  exception Error
+
   type t
 
-  val create : unit -> t
+  val create : Ogg.Stream.packet -> Ogg.Stream.packet -> t
+
+  val check : Ogg.Stream.packet -> bool
+
+  val get_video_format : t -> video_format
+
+  val get_picture_number : t -> int
+
+  val decode_frame : t -> Ogg.Stream.t -> frame
 
 end
 

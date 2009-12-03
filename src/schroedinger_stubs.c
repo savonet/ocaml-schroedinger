@@ -25,17 +25,42 @@
 #include <caml/memory.h>
 #include <caml/bigarray.h>
 #include <caml/alloc.h>
+#include <caml/callback.h>
+#include <caml/signals.h>
 
 #include <ogg/ogg.h>
 #include <ocaml-ogg.h>
 
 #include <string.h>
+
 #include <schroedinger/schro.h>
 #include <schroedinger/schroencoder.h>
+#include <schroedinger/schrodecoder.h>
 
 #define ROUND_UP_SHIFT(x,y) (((x) + (1<<(y)) - 1)>>(y))
 
 /* Common */
+
+static inline SchroFrameFormat schro_frame_format_of_chroma_format(SchroChromaFormat format)
+{
+  switch (format) {
+    case SCHRO_CHROMA_444:
+      return SCHRO_FRAME_FORMAT_U8_444;
+    case SCHRO_CHROMA_422:
+      return SCHRO_FRAME_FORMAT_U8_422;
+    case SCHRO_CHROMA_420:
+      return SCHRO_FRAME_FORMAT_U8_420;
+    default:
+      caml_failwith("invalid value");
+  }
+}
+
+static SchroBuffer *schro_buffer_of_ogg_packet(ogg_packet *op)
+{
+  SchroBuffer *buffer = schro_buffer_new_and_alloc(op->bytes);
+  memcpy(buffer->data, op->packet, op->bytes);
+  return buffer;
+}
 
 void frame_planar_free(SchroFrame *frame, void *private)
 {
@@ -79,10 +104,11 @@ static SchroFrame *schro_frame_of_val(value v)
   if (stride < frame->width || 
       (int)data->dim[0] != len)
     caml_failwith("invalid frame dimension");
-  tmp = malloc(sizeof(char)*len);
+  tmp = malloc(len);
   if (tmp == NULL)
     caml_failwith("malloc");
   memcpy(tmp,data->data,len);
+  frame->components[0].format = frame->format;
   frame->components[0].data = tmp;
   frame->components[0].stride = stride;
   frame->components[0].width = frame->width;
@@ -99,10 +125,11 @@ static SchroFrame *schro_frame_of_val(value v)
   if (stride < ROUND_UP_SHIFT(frame->width, h_shift) ||
       (int)data->dim[0] != len)
     caml_failwith("invalid frame dimension");
-  tmp = malloc(sizeof(char)*len);
+  tmp = malloc(len);
   if (tmp == NULL)
     caml_failwith("malloc");
   memcpy(tmp,data->data,len);
+  frame->components[1].format = frame->format;
   frame->components[1].data = tmp;
   frame->components[1].stride = stride;
   frame->components[1].width = ROUND_UP_SHIFT(frame->width, h_shift);
@@ -118,10 +145,11 @@ static SchroFrame *schro_frame_of_val(value v)
   if (stride < (ROUND_UP_SHIFT(frame->width, h_shift)) ||
       (int)data->dim[0] != len)
     caml_failwith("invalid frame dimension");
-  tmp = malloc(sizeof(char)*len);
+  tmp = malloc(len);
   if (tmp == NULL)
     caml_failwith("malloc");
   memcpy(tmp,data->data,len);
+  frame->components[2].format = frame->format;
   frame->components[2].data = tmp;
   frame->components[2].stride = stride;
   frame->components[2].width = ROUND_UP_SHIFT(frame->width, h_shift);
@@ -133,6 +161,111 @@ static SchroFrame *schro_frame_of_val(value v)
   schro_frame_set_free_callback(frame,frame_planar_free,NULL);
 
   return frame;
+}
+
+static SchroFrame *schro_frame_alloc(SchroFrameFormat format, int width, int height)
+{
+  SchroFrame *frame = schro_frame_new();
+  if (frame == NULL)
+    caml_failwith("malloc");
+  int h_shift;
+  int v_shift;
+  int len;
+  int stride;
+  char *tmp;
+
+  /* Set params */
+  frame->width = width;
+  frame->height = height;
+  frame->format = format;
+
+  /* Get data */
+
+  h_shift = SCHRO_FRAME_FORMAT_H_SHIFT(frame->format);
+  v_shift = SCHRO_FRAME_FORMAT_V_SHIFT(frame->format);
+  
+  /* First plane */
+  stride = frame->width;
+  len = stride*frame->height;
+  tmp = malloc(len);
+  if (tmp == NULL)
+    caml_failwith("malloc");
+  frame->components[0].format = format;
+  frame->components[0].data = tmp;
+  frame->components[0].stride = stride;
+  frame->components[0].width = frame->width;
+  frame->components[0].height = frame->height;
+  frame->components[0].length = len;
+  frame->components[0].h_shift = 0;
+  frame->components[0].v_shift = 0;
+
+  /* Secondary planes */
+  stride = ROUND_UP_SHIFT(frame->width, h_shift);
+  len = stride*(ROUND_UP_SHIFT(frame->height, v_shift));
+  tmp = malloc(len);
+  if (tmp == NULL)
+    caml_failwith("malloc");
+  frame->components[1].format = format;
+  frame->components[1].data = tmp;
+  frame->components[1].stride = stride;
+  frame->components[1].width = ROUND_UP_SHIFT(frame->width, h_shift);
+  frame->components[1].height = ROUND_UP_SHIFT(frame->height, v_shift);
+  frame->components[1].length = len;
+  frame->components[1].h_shift = h_shift;
+  frame->components[1].v_shift = v_shift;
+
+  stride = ROUND_UP_SHIFT(frame->width, h_shift);
+  len = stride*(ROUND_UP_SHIFT(frame->height, v_shift));
+  tmp = malloc(len);
+  if (tmp == NULL)
+    caml_failwith("malloc");
+  frame->components[2].format = format;
+  frame->components[2].data = tmp;
+  frame->components[2].stride = stride;
+  frame->components[2].width = ROUND_UP_SHIFT(frame->width, h_shift);
+  frame->components[2].height = ROUND_UP_SHIFT(frame->height, v_shift);
+  frame->components[2].length = len;
+  frame->components[2].h_shift = h_shift;
+  frame->components[2].v_shift = v_shift;
+
+  schro_frame_set_free_callback(frame,frame_planar_free,NULL);
+
+  return frame;
+}
+
+static value val_of_schro_frame(SchroFrame *frame)
+{
+  CAMLparam0();
+  CAMLlocal4(ret, planes, plane, data);
+  intnat len;
+  void *tmp;
+  int j;
+
+  /* Init result and planes array */
+  ret = caml_alloc_tuple(4);
+  planes = caml_alloc_tuple(3);
+  /* Store planes array */
+  Store_field (ret, 0, planes);
+  /* Store frame infos */
+  Store_field (ret, 1, Val_int(frame->width));
+  Store_field (ret, 2, Val_int(frame->height));
+  Store_field (ret, 3, Val_int(frame->format));
+
+  /* Store data */
+  for (j=0; j<3; j++) {
+    len = frame->components[j].stride*frame->components[j].height;
+    tmp = malloc(len);
+    if (tmp == NULL)
+      caml_failwith("malloc");
+    memcpy(tmp,frame->components[j].data,len);
+    data = caml_ba_alloc(CAML_BA_MANAGED | CAML_BA_C_LAYOUT | CAML_BA_UINT8, 1, tmp, &len);
+    plane = caml_alloc_tuple(2);
+    Store_field(plane, 0, data);
+    Store_field(plane, 1, Val_int(frame->components[j].stride));
+    Store_field(planes, j, plane);
+  }
+
+  CAMLreturn(ret);
 }
 
 CAMLprim value caml_schroedinger_init(value unit)
@@ -449,7 +582,7 @@ static void finalize_schro_enc(value v)
 
 static struct custom_operations schro_enc_ops =
 {
-  "ocaml_gavl_schro_enc",
+  "ocaml_schro_enc",
   finalize_schro_enc,
   custom_compare_default,
   custom_hash_default,
@@ -719,20 +852,7 @@ CAMLprim value ocaml_schroedinger_encode_header(value _enc, value _os)
   tmp_enc = create_enc(&enc->format);
 
   /* Create dummy frame */
-  switch (enc->format.chroma_format)
-  {
-    case SCHRO_CHROMA_444:
-      format = SCHRO_FRAME_FORMAT_U8_444;
-      break;
-    case SCHRO_CHROMA_422:
-      format = SCHRO_FRAME_FORMAT_U8_422;
-      break;
-    case SCHRO_CHROMA_420:
-      format = SCHRO_FRAME_FORMAT_U8_420;
-      break;
-    default:
-      caml_failwith("unknown format");
-  }
+  format = schro_frame_format_of_chroma_format(enc->format.chroma_format);
 
   /* Encode a frame until a packet is ready */
   do
@@ -819,7 +939,7 @@ static void finalize_schro_dec(value v)
 
 static struct custom_operations schro_dec_ops =
 {
-  "ocaml_gavl_schro_dec",
+  "ocaml_schro_dec",
   finalize_schro_dec,
   custom_compare_default,
   custom_hash_default,
@@ -827,16 +947,113 @@ static struct custom_operations schro_dec_ops =
   custom_deserialize_default
 };
 
-CAMLprim value ocaml_schroedinger_create_dec(value unit)
+CAMLprim value ocaml_schroedinger_create_dec(value packet)
 {
-  CAMLparam0();
+  CAMLparam1(packet);
   CAMLlocal1(ret);
+  ogg_packet *op = Packet_val(packet);
+  unsigned char *header;
+  long header_len;
+
+
+  /* Get the encoded buffer */
+  header = op->packet;
+  if (header[0] != 'B' ||
+      header[1] != 'B' ||
+      header[2] != 'C' ||
+      header[3] != 'D' ||
+      header[4] != 0x0)
+    caml_raise_constant(*caml_named_value("schro_exn_invalid_header"));
+
+  header_len = (header[5] << 24) +
+               (header[6] << 16) +
+               (header[7] << 8) +
+                header[8];
+
+   if (header_len <= 13 ||
+       header_len > op->bytes)
+     caml_raise_constant(*caml_named_value("schro_exn_invalid_header"));
+
   SchroDecoder *dec = schro_decoder_new();
+  SchroBuffer *buffer = schro_buffer_of_ogg_packet(op);
+  schro_decoder_autoparse_push(dec, buffer);
 
   ret = caml_alloc_custom(&schro_dec_ops, sizeof(SchroDecoder*), 1, 0);
   Schro_dec_val(ret) = dec;
 
   CAMLreturn(ret);
+}
+
+CAMLprim value ocaml_schroedinger_decoder_get_format(value dec)
+{
+  CAMLparam1(dec);
+  CAMLlocal1(ret);
+  SchroDecoder *decoder = Schro_dec_val(dec);
+  SchroVideoFormat *format = schro_decoder_get_video_format(decoder);
+  ret = value_of_video_format(format);
+  free(format);
+  CAMLreturn(ret);
+}
+
+CAMLprim value ocaml_schroedinger_decoder_get_picture_number(value dec)
+{
+  CAMLparam1(dec);
+  SchroDecoder *decoder = Schro_dec_val(dec);
+  CAMLreturn(Val_int(schro_decoder_get_picture_number(decoder)));
+}
+
+CAMLprim value ocaml_schroedinger_decoder_decode_frame(value dec, value _os)
+{
+  CAMLparam2(dec, _os);
+  CAMLlocal1(ret);
+  SchroDecoder *decoder = Schro_dec_val(dec);
+  ogg_stream_state *os = Stream_state_val(_os);
+  SchroVideoFormat *format;
+  ogg_packet op;
+  SchroFrame *frame;
+  int state;
+
+  while (1) {
+    /* Check what the decoder wants now. */
+    state = schro_decoder_autoparse_wait(decoder);
+    switch (state) {
+      case SCHRO_DECODER_FIRST_ACCESS_UNIT:
+      case SCHRO_DECODER_NEED_BITS:
+        /* Grap a packet */
+        if (ogg_stream_packetout(os,&op) == 0) {
+          caml_raise_constant(*caml_named_value("ogg_exn_not_enough_data"));
+        }
+        /* Feed the decoder */
+        schro_decoder_autoparse_push(decoder,schro_buffer_of_ogg_packet(&op));
+        break;
+      case SCHRO_DECODER_NEED_FRAME:
+        format = schro_decoder_get_video_format(decoder);
+        schro_decoder_add_output_picture(decoder,
+                                         schro_frame_alloc(schro_frame_format_of_chroma_format(format->chroma_format), 
+                                                           format->width, format->height));
+        free(format);
+        break;
+      case SCHRO_DECODER_OK:
+        frame = schro_decoder_pull(decoder);
+        if (frame->width != 0 && frame->height != 0) {
+          ret = val_of_schro_frame(frame);
+          schro_frame_unref(frame);
+          CAMLreturn(ret);
+        } else {
+          schro_frame_unref(frame); 
+          caml_raise_constant(*caml_named_value("schro_exn_skip"));
+        }
+        break;
+      /* TODO: proper error raising.. */
+      case SCHRO_DECODER_STALLED: 
+      case SCHRO_DECODER_WAIT:
+      case SCHRO_DECODER_ERROR:
+      default:
+        caml_raise_constant(*caml_named_value("schro_exn_dec_error"));
+      }
+  }
+
+  caml_failwith("unknown error");  
 }
 
 /* Ogg skeleton interface */

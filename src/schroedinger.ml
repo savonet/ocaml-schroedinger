@@ -42,6 +42,14 @@ let int_of_format f =
    | Yuv_444_p -> int_of_define "SCHRO_FRAME_FORMAT_U8_444"
    | Yuv_420_p -> int_of_define "SCHRO_FRAME_FORMAT_U8_420"
 
+let format_of_int x = 
+  let f = int_of_define in
+  match x with
+    | x when x = f "SCHRO_FRAME_FORMAT_U8_422" -> Yuv_422_p
+    | x when x = f "SCHRO_FRAME_FORMAT_U8_444" -> Yuv_444_p
+    | x when x = f "SCHRO_FRAME_FORMAT_U8_420" -> Yuv_420_p
+    | _ -> assert false
+
 type video_type = 
   | CUSTOM
   | QSIF
@@ -374,6 +382,17 @@ let internal_frame_of_frame f =
     int_format = int_of_format f.format
   }
 
+let frame_of_internal_frame f = 
+  if (Array.length f.int_planes <> 3) then
+    failwith "Frame does not have 3 planes. \
+              Only planar formats are supported for now..";
+  { planes = f.int_planes;
+    frame_width  = f.int_width;
+    frame_height = f.int_height;
+    format = format_of_int f.int_format
+  }
+
+
 module Encoder = 
 struct
 
@@ -622,9 +641,36 @@ end
 module Decoder = 
 struct
 
+  exception Invalid_header
+  exception Skipped_frame
+  exception Error
+
+  let _ =
+    Callback.register_exception "schro_exn_invalid_header" Invalid_header ;
+    Callback.register_exception "schro_exn_skip" Skipped_frame ;
+    Callback.register_exception "schro_exn_error" Error
+
   type t
 
-  external create : unit -> t = "ocaml_schroedinger_create_dec"
+  external create : Ogg.Stream.packet -> t = "ocaml_schroedinger_create_dec"
+
+  let check p = 
+    try
+      ignore(create p);
+      true
+    with
+       | Invalid_header -> false
+
+  let create p1 p2 = create p2
+
+  external get_video_format : t -> video_format = "ocaml_schroedinger_decoder_get_format"
+
+  external get_picture_number : t -> int = "ocaml_schroedinger_decoder_get_picture_number"
+
+  external decode_frame : t -> Ogg.Stream.t -> internal_frame = "ocaml_schroedinger_decoder_decode_frame"
+
+  let decode_frame dec os = 
+    frame_of_internal_frame (decode_frame dec os)    
 
 end
 
