@@ -19,8 +19,6 @@ let () =
     ignore
     "schrotranscode [options]"
 
-let eos = ref false
-
 let in_init () =
   let sync,fd = Ogg.Sync.create_from_file !infile in
   let rec fill os =
@@ -30,10 +28,7 @@ let in_init () =
       if Ogg.Page.serialno page = 
          Ogg.Stream.serialno os
       then
-       begin
         Ogg.Stream.put_page os page ;
-        if Ogg.Page.eos page then eos := true
-       end
     with
        | Ogg.Bad_data -> fill os (* Do not care about page that are not for us.. *)
   in
@@ -116,22 +111,29 @@ let () =
               | Some f -> f
               | None   -> assert false
           end
-      | Ogg.Not_enough_data -> (fill is; get_frame ())
+      | Ogg.Not_enough_data when not (Ogg.Stream.eos is) -> 
+           (fill is; get_frame ())
   in
   let rec generator () =
     try
       Encoder.encode_frame enc (get_frame ()) os;
       Ogg.Stream.get_page os
     with 
-      | Ogg.Not_enough_data -> generator ()
+      | Ogg.Not_enough_data when not (Ogg.Stream.eos is) -> 
+           generator ()
   in
   Printf.printf "Starting transcoding loop !\n%!";
-  while not !eos do
-    let op = generator () in
-    let s_o_p (h,b) = h ^ b in
-    let op = s_o_p op in
-      out op;
-  done;
+  begin
+   try
+    while true do
+      let op = generator () in
+      let s_o_p (h,b) = h ^ b in
+      let op = s_o_p op in
+        out op;
+    done;
+   with
+     | Ogg.Not_enough_data -> ()
+  end ;
   Encoder.eos enc os;
   out (Ogg.Stream.flush os);
   Unix.close fd;
