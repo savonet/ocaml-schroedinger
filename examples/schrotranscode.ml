@@ -96,8 +96,6 @@ let out_init video_format =
           Schroedinger.Encoder.
            rate_control = Encoder.Constant_noise_threshold;
            noise_threshold = !quality;
-           mv_precision = 1;
-           enable_noarith = true
     };
     out (Ogg.Stream.flush os);
     enc,os,out
