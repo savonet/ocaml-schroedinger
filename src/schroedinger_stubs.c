@@ -737,7 +737,9 @@ int enc_get_packet(encoder_t *enc, ogg_packet *op)
   void *priv = NULL;
  
   /* Add a new ogg packet */
+  caml_enter_blocking_section();
   state = schro_encoder_wait(enc->encoder);
+  caml_leave_blocking_section();
   switch(state)
   {
   case SCHRO_STATE_NEED_FRAME:
@@ -745,7 +747,9 @@ int enc_get_packet(encoder_t *enc, ogg_packet *op)
   case SCHRO_STATE_END_OF_STREAM:
       return -1;
   case SCHRO_STATE_HAVE_BUFFER:
+      caml_enter_blocking_section();
       enc_buf = schro_encoder_pull_full(enc->encoder, &dts, &priv);
+      caml_enter_blocking_section();
       op->b_o_s = 0;
       if (SCHRO_PARSE_CODE_IS_SEQ_HEADER(enc_buf->data[4]))
       {
@@ -819,7 +823,9 @@ CAMLprim value ocaml_schroedinger_encode_frame(value _enc, value frame, value _o
   int ret = 2;
  
   /* Put the frame into the encoder. */
+  caml_enter_blocking_section();
   schro_encoder_push_frame_full(enc->encoder, f, pts);
+  caml_leave_blocking_section();
   enc->presentation_frame_number++;
  
   while (ret > 0) {
@@ -1015,7 +1021,9 @@ CAMLprim value ocaml_schroedinger_decoder_decode_frame(value dec, value _os)
 
   while (1) {
     /* Check what the decoder wants now. */
+    caml_enter_blocking_section();
     state = schro_decoder_autoparse_wait(decoder);
+    caml_leave_blocking_section();
     switch (state) {
       case SCHRO_DECODER_FIRST_ACCESS_UNIT:
       case SCHRO_DECODER_NEED_BITS:
@@ -1024,7 +1032,9 @@ CAMLprim value ocaml_schroedinger_decoder_decode_frame(value dec, value _os)
           caml_raise_constant(*caml_named_value("ogg_exn_not_enough_data"));
         }
         /* Feed the decoder */
+        caml_enter_blocking_section();
         schro_decoder_autoparse_push(decoder,schro_buffer_of_ogg_packet(&op));
+        caml_leave_blocking_section();
         break;
       case SCHRO_DECODER_NEED_FRAME:
         format = schro_decoder_get_video_format(decoder);
@@ -1034,7 +1044,9 @@ CAMLprim value ocaml_schroedinger_decoder_decode_frame(value dec, value _os)
         free(format);
         break;
       case SCHRO_DECODER_OK:
+        caml_enter_blocking_section();
         frame = schro_decoder_pull(decoder);
+        caml_leave_blocking_section();
         if (frame->width != 0 && frame->height != 0) {
           ret = val_of_schro_frame(frame);
           schro_frame_unref(frame);
