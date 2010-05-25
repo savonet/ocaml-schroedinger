@@ -73,7 +73,7 @@ static SchroFrame *schro_frame_of_val(value v)
 {
   SchroFrame *frame = schro_frame_new();
   if (frame == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
   int i = 0;
   int j = 0;
   int h_shift;
@@ -106,7 +106,7 @@ static SchroFrame *schro_frame_of_val(value v)
     caml_failwith("invalid frame dimension");
   tmp = malloc(len);
   if (tmp == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
   memcpy(tmp,data->data,len);
   frame->components[0].format = frame->format;
   frame->components[0].data = tmp;
@@ -127,7 +127,7 @@ static SchroFrame *schro_frame_of_val(value v)
     caml_failwith("invalid frame dimension");
   tmp = malloc(len);
   if (tmp == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
   memcpy(tmp,data->data,len);
   frame->components[1].format = frame->format;
   frame->components[1].data = tmp;
@@ -147,7 +147,7 @@ static SchroFrame *schro_frame_of_val(value v)
     caml_failwith("invalid frame dimension");
   tmp = malloc(len);
   if (tmp == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
   memcpy(tmp,data->data,len);
   frame->components[2].format = frame->format;
   frame->components[2].data = tmp;
@@ -167,7 +167,7 @@ static SchroFrame *schro_frame_alloc(SchroFrameFormat format, int width, int hei
 {
   SchroFrame *frame = schro_frame_new();
   if (frame == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
   int h_shift;
   int v_shift;
   int len;
@@ -189,7 +189,7 @@ static SchroFrame *schro_frame_alloc(SchroFrameFormat format, int width, int hei
   len = stride*frame->height;
   tmp = malloc(len);
   if (tmp == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
   frame->components[0].format = format;
   frame->components[0].data = tmp;
   frame->components[0].stride = stride;
@@ -204,7 +204,7 @@ static SchroFrame *schro_frame_alloc(SchroFrameFormat format, int width, int hei
   len = stride*(ROUND_UP_SHIFT(frame->height, v_shift));
   tmp = malloc(len);
   if (tmp == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
   frame->components[1].format = format;
   frame->components[1].data = tmp;
   frame->components[1].stride = stride;
@@ -218,7 +218,7 @@ static SchroFrame *schro_frame_alloc(SchroFrameFormat format, int width, int hei
   len = stride*(ROUND_UP_SHIFT(frame->height, v_shift));
   tmp = malloc(len);
   if (tmp == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
   frame->components[2].format = format;
   frame->components[2].data = tmp;
   frame->components[2].stride = stride;
@@ -256,7 +256,7 @@ static value val_of_schro_frame(SchroFrame *frame)
     len = frame->components[j].stride*frame->components[j].height;
     tmp = malloc(len);
     if (tmp == NULL)
-      caml_failwith("malloc");
+      caml_raise_out_of_memory();
     memcpy(tmp,frame->components[j].data,len);
     data = caml_ba_alloc(CAML_BA_MANAGED | CAML_BA_C_LAYOUT | CAML_BA_UINT8, 1, tmp, &len);
     plane = caml_alloc_tuple(2);
@@ -673,7 +673,7 @@ encoder_t *create_enc(SchroVideoFormat *format)
 {
   encoder_t *enc = malloc(sizeof(encoder_t));
   if (enc == NULL)
-    caml_failwith("malloc"); 
+    caml_raise_out_of_memory(); 
 
   enc->encoded_frame_number = -1;
   enc->presentation_frame_number = 0;
@@ -762,7 +762,7 @@ int enc_get_packet(encoder_t *enc, ogg_packet *op)
       op->e_o_s = 0;
       op->packet = malloc(enc_buf->length);
       if (op->packet == NULL) 
-        caml_failwith("malloc");
+        caml_raise_out_of_memory();
       memcpy(op->packet, enc_buf->data, enc_buf->length);
       op->bytes = enc_buf->length;
 
@@ -817,7 +817,7 @@ CAMLprim value ocaml_schroedinger_encode_frame(value _enc, value frame, value _o
   SchroFrame *f = schro_frame_of_val(frame);
   ogg_int64_t *pts = malloc(sizeof(ogg_int64_t));
   if (pts == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
   memcpy(pts,&enc->presentation_frame_number,sizeof(ogg_int64_t));
   ogg_packet op;
   int ret = 2;
@@ -1109,7 +1109,7 @@ CAMLprim value ocaml_schroedinger_skeleton_fisbone(value serial, value info, val
   memset (&op, 0, sizeof (op));
   op.packet = malloc(len);
   if (op.packet == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
 
   memset (op.packet, 0, len);
   /* it will be the fisbone packet for the theora video */
