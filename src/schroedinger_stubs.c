@@ -1017,7 +1017,7 @@ CAMLprim value ocaml_schroedinger_decoder_decode_frame(value dec, value _os)
   SchroVideoFormat *format;
   ogg_packet op;
   SchroFrame *frame;
-  int state;
+  int state, err;
 
   while (1) {
     /* Check what the decoder wants now. */
@@ -1028,9 +1028,11 @@ CAMLprim value ocaml_schroedinger_decoder_decode_frame(value dec, value _os)
       case SCHRO_DECODER_FIRST_ACCESS_UNIT:
       case SCHRO_DECODER_NEED_BITS:
         /* Grap a packet */
-        if (ogg_stream_packetout(os,&op) == 0) {
+        err = ogg_stream_packetout(os,&op);
+        if (err == 0) 
           caml_raise_constant(*caml_named_value("ogg_exn_not_enough_data"));
-        }
+        if (err == -1)
+          caml_raise_constant(*caml_named_value("ogg_exn_out_of_sync"));
         /* Feed the decoder */
         caml_enter_blocking_section();
         schro_decoder_autoparse_push(decoder,schro_buffer_of_ogg_packet(&op));
