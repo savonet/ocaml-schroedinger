@@ -1,6 +1,6 @@
 name="schroedinger"
 version="@VERSION@"
 description="OCaml bindings for schroedinger"
-requires="@requires@"
+requires="ogg @requires@"
 archive(byte)="schroedinger.cma"
 archive(native)="schroedinger.cmxa"
