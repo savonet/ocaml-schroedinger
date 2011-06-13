@@ -25,7 +25,7 @@ DVIPS = @DVIPS@
 PS2PDF = @PS2PDF@
 OCAMLLIBPATH = @CAMLLIBPATH@
 
-SOURCES = schroedinger.ml schroedinger.mli schroedinger_stubs.c
+SOURCES = schroedinger.ml schroedinger.mli schroedinger_stubs.c ogg_demuxer_schroedinger_decoder.mli ogg_demuxer_schroedinger_decoder.ml
 RESULT = schroedinger
 OCAMLDOCFLAGS = -stars
 LIBINSTALL_FILES = $(wildcard *.mli *.cmi *.cma *.cmxa *.cmx *.a *.so)

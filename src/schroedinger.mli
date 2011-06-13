@@ -123,6 +123,8 @@ type frame =
     format : format
   }
 
+val frames_of_granulepos : interlaced:bool -> Int64.t -> Int64.t
+
 module Encoder :
 sig
 
@@ -135,8 +137,6 @@ sig
   val encode_header : t -> Ogg.Stream.t -> unit
 
   val encode_frame : t -> frame -> Ogg.Stream.t -> unit
-
-  val frames_of_granulepos : Int64.t -> t -> Int64.t
 
   val encoded_of_granulepos : Int64.t -> t -> Int64.t
 

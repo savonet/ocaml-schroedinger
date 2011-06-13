@@ -629,11 +629,10 @@ static void calculate_granulepos(encoder_t *dd, ogg_packet *op, ogg_int64_t *pts
       dd->encoded_frame_number++;
 }
 
-CAMLprim value ocaml_schroedinger_frames_of_granulepos(value _granulepos, value _enc)
+CAMLprim value ocaml_schroedinger_frames_of_granulepos(value _granulepos, value interlaced)
 {
-  CAMLparam2(_granulepos, _enc);
+  CAMLparam1(_granulepos);
   ogg_int64_t granulepos = Int64_val(_granulepos);
-  encoder_t *enc = Schro_enc_val(_enc);
   ogg_int64_t ret;
 
   if (granulepos == -1)
@@ -641,7 +640,7 @@ CAMLprim value ocaml_schroedinger_frames_of_granulepos(value _granulepos, value 
 
   ret = (granulepos >> 31) + (granulepos >> 9 & 0x7ff);
 
-  if (!enc->format.interlaced_coding)
+  if (interlaced == Val_false)
   {
     ret /= 2;
   }

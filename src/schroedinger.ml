@@ -1,5 +1,5 @@
 (*
- * Copyright 2003-2009 Savonet team
+ * Copyright 2003-2011 Savonet team
  *
  * This file is part of Ocaml-schroedinger.
  *
@@ -392,6 +392,10 @@ let frame_of_internal_frame f =
     format = format_of_int f.int_format
   }
 
+external frames_of_granulepos : Int64.t -> bool -> Int64.t = "ocaml_schroedinger_frames_of_granulepos"
+
+let frames_of_granulepos ~interlaced pos = 
+  frames_of_granulepos pos interlaced
 
 module Encoder = 
 struct
@@ -415,8 +419,6 @@ struct
   external encode_frame : t -> internal_frame -> Ogg.Stream.t -> unit = "ocaml_schroedinger_encode_frame" 
 
   let encode_frame t f = encode_frame t (internal_frame_of_frame f)
-
-  external frames_of_granulepos : Int64.t -> t -> Int64.t = "ocaml_schroedinger_frames_of_granulepos"
 
   external encoded_of_granulepos : Int64.t -> t -> Int64.t = "ocaml_schroedinger_encoded_of_granulepos"
 
