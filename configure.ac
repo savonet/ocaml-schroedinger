@@ -19,18 +19,7 @@ AC_PROG_CC()
 AC_CHECK_TOOL([AR],[ar],no)
 AC_SUBST(AR)
 PKG_PROG_PKG_CONFIG()
-#PKG_CHECK_MODULES(schroedinger, schroedinger-1.0, , [AC_MSG_ERROR(schroedinger not found.)])
-
-# PKG_CHECK_MODULES loses when you need --libs-only-[lL]
-if ! $PKG_CONFIG --exists schroedinger-1.0; then
-        AC_MSG_ERROR([schroedinger not found])
-fi
-schroedinger_CFLAGS=`$PKG_CONFIG --cflags schroedinger-1.0`
-AC_SUBST([schroedinger_CFLAGS])
-schroedinger_LIBS=`$PKG_CONFIG --libs-only-l schroedinger-1.0`
-AC_SUBST([schroedinger_LIBS])
-schroedinger_LDFLAGS=`$PKG_CONFIG --libs-only-L schroedinger-1.0`
-AC_SUBST([schroedinger_LDFLAGS])
+PKG_CONFIG_CHECK_MODULE([schroedinger-1.0])
 
 AC_ARG_WITH([ogg-dir],AC_HELP_STRING([--with-ogg-dir=path],
         [use "path" as the location of ocaml-ogg (autodetected by default)]))
