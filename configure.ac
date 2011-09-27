@@ -1,28 +1,16 @@
 
 # check for one particular file of the sources 
-AC_INIT(ocaml-schroedinger, 0.1.0, savonet-users@lists.sourceforge.net)
+AC_INIT([ocaml-schroedinger],[0.1.0],[savonet-users@lists.sourceforge.net])
 
 VERSION=$PACKAGE_VERSION
 AC_MSG_RESULT([configuring $PACKAGE_STRING])
 
-# Add prefix to compilation variables
-# if passed
-if test "x$prefix" != "xNONE"; then
-	CFLAGS="$CFLAGS -I$prefix/include"
-	LDFLAGS="$LDFLAGS -L$prefix/lib"
-	CPPFLAGS="$CPPFLAGS -I$prefix/include"
-fi
+AC_BASE_CHECKS()
 
-AC_CHECK_OCAML_COMPILERS()
-
-AC_PROG_CC()
-AC_CHECK_TOOL([AR],[ar],no)
-AC_SUBST(AR)
 PKG_PROG_PKG_CONFIG()
 PKG_CONFIG_CHECK_MODULE([schroedinger-1.0])
 
-AC_ARG_WITH([ogg-dir],AC_HELP_STRING([--with-ogg-dir=path],
-        [use "path" as the location of ocaml-ogg (autodetected by default)]))
+AC_ARG_WITH([ogg-dir],AS_HELP_STRING([--with-ogg-dir=path],[use "path" as the location of ocaml-ogg (autodetected by default)]))
 if test -z "$with_ogg_dir"; then
   AC_MSG_CHECKING(for ocaml-ogg)
   if ($OCAMLFIND query ogg > /dev/null 2>&1); then
