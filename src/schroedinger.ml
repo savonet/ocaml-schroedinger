@@ -412,11 +412,11 @@ struct
   let get_video_format x = 
     video_format_of_internal_video_format (get_video_format x)
 
-  external eos : t -> Ogg.Stream.t -> unit = "ocaml_schroedinger_enc_eos"
+  external eos : t -> Ogg.Stream.stream -> unit = "ocaml_schroedinger_enc_eos"
 
-  external encode_header : t -> Ogg.Stream.t -> unit = "ocaml_schroedinger_encode_header"
+  external encode_header : t -> Ogg.Stream.stream -> unit = "ocaml_schroedinger_encode_header"
 
-  external encode_frame : t -> internal_frame -> Ogg.Stream.t -> unit = "ocaml_schroedinger_encode_frame" 
+  external encode_frame : t -> internal_frame -> Ogg.Stream.stream -> unit = "ocaml_schroedinger_encode_frame" 
 
   let encode_frame t f = encode_frame t (internal_frame_of_frame f)
 
@@ -669,7 +669,7 @@ struct
 
   external get_picture_number : t -> int = "ocaml_schroedinger_decoder_get_picture_number"
 
-  external decode_frame : t -> Ogg.Stream.t -> internal_frame = "ocaml_schroedinger_decoder_decode_frame"
+  external decode_frame : t -> Ogg.Stream.stream -> internal_frame = "ocaml_schroedinger_decoder_decode_frame"
 
   let decode_frame dec os = 
     frame_of_internal_frame (decode_frame dec os)    

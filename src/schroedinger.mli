@@ -134,13 +134,13 @@ sig
 
   val get_video_format : t -> video_format
 
-  val encode_header : t -> Ogg.Stream.t -> unit
+  val encode_header : t -> Ogg.Stream.stream -> unit
 
-  val encode_frame : t -> frame -> Ogg.Stream.t -> unit
+  val encode_frame : t -> frame -> Ogg.Stream.stream -> unit
 
   val encoded_of_granulepos : Int64.t -> t -> Int64.t
 
-  val eos : t -> Ogg.Stream.t -> unit
+  val eos : t -> Ogg.Stream.stream -> unit
 
   type rate_control = 
     | Constant_noise_threshold
@@ -270,7 +270,7 @@ sig
 
   val get_picture_number : t -> int
 
-  val decode_frame : t -> Ogg.Stream.t -> frame
+  val decode_frame : t -> Ogg.Stream.stream -> frame
 
 end
 
