@@ -156,13 +156,13 @@ type colour_matrix =
   | SDTV
   | REVERSIBLE
 
-let int_of_colour_matrix x = 
+let int_of_colour_matrix (x:colour_matrix) = 
   match x with
     | HDTV -> int_of_define "SCHRO_COLOUR_MATRIX_HDTV"
     | SDTV -> int_of_define "SCHRO_COLOUR_MATRIX_SDTV"
     | REVERSIBLE -> int_of_define "SCHRO_COLOUR_MATRIX_REVERSIBLE"
 
-let colour_matrix_of_int x =
+let colour_matrix_of_int x : colour_matrix =
   match x with
     | x when x = int_of_define "SCHRO_COLOUR_MATRIX_HDTV" -> HDTV
     | x when x = int_of_define "SCHRO_COLOUR_MATRIX_SDTV" -> SDTV
@@ -663,7 +663,7 @@ struct
     with
        | Invalid_header -> false
 
-  let create p1 p2 = create p2
+  let create _ p2 = create p2
 
   external get_video_format : t -> video_format = "ocaml_schroedinger_decoder_get_format"
 

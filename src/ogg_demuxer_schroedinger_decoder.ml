@@ -94,7 +94,7 @@ let decoder os =
     os := new_os
   in
   let samples_of_granulepos pos =
-    let (decoder,info) = init () in
+    let (_,info) = init () in
     Schroedinger.frames_of_granulepos
         ~interlaced:info.Schroedinger.interlaced pos
   in
