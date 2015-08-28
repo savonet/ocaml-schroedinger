@@ -1,9 +1,8 @@
 SOURCES=schrotranscode.ml
 RESULT=schrotranscode
-INCDIRS=../src ../../ocaml-ogg/src
+OCAMLOGG_DIR=../../ocaml-ogg/src
+INCDIRS=../src $(OCAMLOGG_DIR)
 LIBS=unix bigarray ogg schroedinger
-OCAMLC = /usr/bin/ocamlc -g 
-OCAMLOPT = /usr/bin/ocamlopt -g 
 
 all: nc
 
