@@ -81,6 +81,17 @@ let in_init () =
   flush_all ();
   t,os,fill,video_format,fd
 
+let ogg_flush s =
+  let s_o_f (h,b) = h ^ b in
+  let rec f v =
+    try
+      let v = v ^ (s_o_f (Ogg.Stream.flush_page s)) in
+      f v
+    with
+      | Ogg.Not_enough_data -> v
+  in
+  f ""
+
 let out_init video_format =
   let oc = open_out !outfile in
   let out s = output_string oc s; flush oc in
@@ -92,7 +103,7 @@ let out_init video_format =
            rate_control = Encoder.Constant_noise_threshold;
            noise_threshold = !quality;
     };
-    out (Ogg.Stream.flush os);
+    out (ogg_flush os);
     enc,os,out
 
 let () = 
@@ -135,7 +146,7 @@ let () =
      | Ogg.Not_enough_data -> ()
   end ;
   Encoder.eos enc os;
-  out (Ogg.Stream.flush os);
+  out (ogg_flush os);
   Unix.close fd;
   Printf.printf "Transcoding is finished..\n"
 
